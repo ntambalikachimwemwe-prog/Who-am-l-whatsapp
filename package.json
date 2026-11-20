@@ -1,0 +1,17 @@
+{
+  "name": "who-am-i-whatsapp-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Private two-player Who Am I? guessing game with verifiable random assignments",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
