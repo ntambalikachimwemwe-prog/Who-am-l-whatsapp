@@ -109,7 +109,12 @@ io.on("connection", socket => {
     socket.emit("reveal",{identities:room.players.map(x=>x.identity),seed:room.seed,commitment:room.commitment});
   });
   socket.on("rematch", () => {
-    const room=rooms.get(socket.data.code); if(!room||room.players.some(p=>!p.socketId)) return;
+    const room=rooms.get(socket.data.code);
+    if(!room || !playerFor(room,socket.id)) return;
+    if(room.status!=="finished") return socket.emit("errorMsg","The next round becomes available after someone guesses correctly.");
+    if(room.players.some(p=>!p.socketId)) return socket.emit("errorMsg","Both players must be connected to start the next round.");
+    // The first player to press NEXT ROUND starts it for both players.
+    // Changing status to playing immediately prevents a second click starting another round.
     beginRound(room);
   });
   socket.on("disconnect", () => {
