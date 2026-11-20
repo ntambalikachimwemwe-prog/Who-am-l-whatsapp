@@ -90,6 +90,7 @@ io.on("connection", socket => {
   socket.on("start", ({category}) => {
     const room=rooms.get(socket.data.code); if(!room||!playerFor(room,socket.id)) return;
     if(room.players.some(p=>!p.socketId)) return socket.emit("errorMsg","Waiting for your friend to join.");
+    if(!room.players.every(p=>p.depositStatus==="approved")) return socket.emit("errorMsg","Both deposits must be approved before play starts.");
     if(PEOPLE[category]) room.category=category;
     beginRound(room);
   });
@@ -111,7 +112,7 @@ io.on("connection", socket => {
     const correct=String(guess||"").trim().toLowerCase()===String(target.identity||"").toLowerCase();
     p.guesses++;
     if(correct) {
-      p.score+=10; room.status="finished"; const winnerKey=p.name; const winnings=room.stakeAmount*2; balances.set(winnerKey,(balances.get(winnerKey)||0)+winnings); room.prizeAwarded={winner:p.name,amount:winnings,at:new Date().toISOString()};
+      p.score+=10; room.status="finished"; if(!room.prizeAwarded){const winnerKey=p.name; const winnings=room.stakeAmount*2; balances.set(winnerKey,(balances.get(winnerKey)||0)+winnings); room.prizeAwarded={winner:p.name,amount:winnings,at:new Date().toISOString()};}
       addLog(room,"system",p.name+" guessed correctly and wins 10 points!");
       io.to(room.code).emit("reveal",{identities:room.players.map(x=>x.identity),seed:room.seed,commitment:room.commitment,correctBy:p.name});
     } else {
