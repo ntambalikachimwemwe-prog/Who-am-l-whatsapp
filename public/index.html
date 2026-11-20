@@ -49,8 +49,8 @@ $("chatlog").innerHTML=s.log.map(m=>'<div class="msg '+(m.type==="system"?"syste
 $("rematch").disabled=s.status!=="finished";$("submitGuess").disabled=s.status!=="playing";$("send").disabled=s.status!=="playing";
 });
 socket.on("guessResult",r=>{$("guessResult").textContent=r.message;});
-socket.on("reveal",r=>{$("result").textContent="Round identities: "+r.identities.join(" vs ")+". Winner: "+(r.correctBy||"see chat");const expected=cryptoHash(r.seed);$("verification").textContent="Fairness check: "+(expected===r.commitment?"PASS — seed matches the published commitment.":"Unable to verify commitment.");});
-function cryptoHash(seed){return window.crypto&&window.crypto.subtle? "":""}
+socket.on("reveal",async r=>{$("result").textContent="Round identities: "+r.identities.join(" vs ")+". Winner: "+(r.correctBy||"see chat");const expected=await cryptoHash(r.seed);$("verification").textContent="Fairness check: "+(expected===r.commitment?"PASS — seed matches the published commitment.":"Unable to verify commitment.");});
+async function cryptoHash(seed){const bytes=new TextEncoder().encode(seed);const digest=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("")}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 $("send").onclick=()=>{const t=$("message").value.trim();if(t){socket.emit("chat",{text:t});$("message").value=""}};
 $("message").addEventListener("keydown",e=>{if(e.key==="Enter")$("send").click()});
