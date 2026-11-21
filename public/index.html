@@ -92,9 +92,9 @@ if(token)enter();authMode();
  const layout=main.querySelector('.layout');if(layout)main.insertBefore(hero,layout);
  const oldShow=window.showApp;
  function refreshHero(){
-  const n=document.getElementById('heroGreeting');if(n&&window.me)n.textContent='Welcome back, '+(window.me.name||'friend')+'.';
-  const p=document.getElementById('statPosts');if(p&&window.posts)p.textContent=window.posts.length;
-  const c=document.getElementById('statReplies');if(c&&window.posts)c.textContent=window.posts.reduce((a,x)=>a+(x.comments||[]).length,0);
+  const n=document.getElementById('heroGreeting');const user=document.getElementById('topUser');if(n)n.textContent='Welcome back, '+((user&&user.textContent.trim())||'friend')+'.';
+  const p=document.getElementById('statPosts');if(p)p.textContent=document.querySelectorAll('#feed .post').length;
+  const c=document.getElementById('statReplies');if(c)c.textContent=document.querySelectorAll('#feed .comment').length;
  }
  const observer=new MutationObserver(refreshHero);const feed=document.getElementById('feed');if(feed)observer.observe(feed,{childList:true,subtree:true});
  document.addEventListener('click',e=>{if(e.target.closest('#publish'))setTimeout(refreshHero,350);});
