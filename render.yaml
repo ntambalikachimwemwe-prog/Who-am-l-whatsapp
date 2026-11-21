@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: circle-social-platform
+    runtime: node
+    plan: free
+    branch: social-platform
+    rootDir: circle
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
