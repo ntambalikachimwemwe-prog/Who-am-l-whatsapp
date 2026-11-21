@@ -7,112 +7,122 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 10000;
+app.use(express.json({limit:"1mb"}));
 app.use(express.static("public"));
-app.get("/health", (_, res) => res.json({ok:true, service:"Who Am I?"}));
+app.get("/health", (_,res)=>res.json({ok:true,service:"Social Hub"}));
 
-const PEOPLE = {
-  "Footballers": ["Lionel Messi","Cristiano Ronaldo","Kylian Mbappe","Erling Haaland","Mohamed Salah","Sadio Mane","Victor Osimhen","Didier Drogba","Samuel Eto'o","George Weah","Mia Hamm","Neymar","Vinicius Junior","Jude Bellingham","Bukayo Saka","Harry Kane","Luka Modric","Zlatan Ibrahimovic","David Beckham","Ronaldinho"],
-  "Musicians": ["Burna Boy","Wizkid","Davido","Tems","Rihanna","Beyonce","Taylor Swift","Drake","Adele","Ed Sheeran","Diamond Platnumz","Fally Ipupa","Yemi Alade","Angelique Kidjo","Laufey","Bruno Mars","The Weeknd","Jay-Z","Akon","Yo Maps"],
-  "Actors": ["Denzel Washington","Idris Elba","Lupita Nyongo","Jackie Chan","Leonardo DiCaprio","Zendaya","Morgan Freeman","Viola Davis","Chadwick Boseman","Will Smith","Angelina Jolie","Tom Cruise","Genevieve Nnaji","John Dumelo","Connie Ferguson","Robert Downey Jr."],
-  "Politicians": ["Nelson Mandela","Barack Obama","Wangari Maathai","Kamala Harris","Donald Trump","Julius Nyerere","Hastings Kamuzu Banda","Joyce Banda","Lazarus Chakwera","Peter Mutharika","Paul Kagame","Emmerson Mnangagwa","Cyril Ramaphosa","Mia Mottley","Ellen Johnson Sirleaf"],
-  "African celebrities": ["Trevor Noah","Minnie Dlamini","Bonang Matheba","Elsa Majimbo","Jackie Appiah","Rita Dominic","Sarkodie","Makhadzi","Kizz Daniel","Zari Hassan","Nadia Nakai","Wahu Kagwi","Lerato Kganyago","Anne Kansiime","Mpoza"]
-};
-const rooms = new Map();
-const clean = s => String(s || "").trim().slice(0,40);
-const makeCode = () => crypto.randomBytes(3).toString("hex").toUpperCase();
-const hash = s => crypto.createHash("sha256").update(s).digest("hex");
-function publicState(room) {
-  return {code:room.code, players:room.players.map(p=>({name:p.name,connected:!!p.socketId,score:p.score})), status:room.status, category:room.category, round:room.round, log:room.log.slice(-40), scores:room.players.map(p=>p.score), commitment:room.commitment};
+const users = new Map();
+const tokens = new Map();
+const posts = [];
+const conversations = new Map();
+const messages = new Map();
+const makeId = () => crypto.randomBytes(12).toString("hex");
+const normalPhone = value => String(value||"").replace(/[^+\d]/g,"").slice(0,20);
+const hashPin = (pin,salt) => crypto.scryptSync(String(pin),salt,64).toString("hex");
+function auth(req,res,next) {
+  const token=(req.headers.authorization||"").replace(/^Bearer\s+/i,"");
+  const userId=tokens.get(token);
+  const user=users.get(userId);
+  if(!user) return res.status(401).json({error:"Please sign in again."});
+  req.user=user; req.token=token; next();
 }
-function broadcast(room) { io.to(room.code).emit("state", publicState(room)); }
-function playerFor(room,socketId) { return room.players.find(p=>p.socketId===socketId); }
-function sendPrivate(room, player) {
-  if (player && player.socketId) io.to(player.socketId).emit("assignment",{name:player.identity,category:room.category,round:room.round});
+function safeUser(user){return {id:user.id,name:user.name,phone:user.phone,bio:user.bio||"",joinedAt:user.joinedAt};}
+function safePost(post,viewerId){
+  return {...post,author:safeUser(users.get(post.authorId)),liked:post.likes.includes(viewerId),
+    comments:post.comments.map(c=>({...c,author:safeUser(users.get(c.authorId)),replies:c.replies.map(r=>({...r,author:safeUser(users.get(r.authorId))}))}))};
 }
-function beginRound(room) {
-  const deck = PEOPLE[room.category] || Object.values(PEOPLE).flat();
-  const seed = crypto.randomBytes(32).toString("hex");
-  const rng = crypto.createHash("sha256").update(seed).digest();
-  const n = rng.readUInt32BE(0) % deck.length;
-  let m = rng.readUInt32BE(4) % deck.length;
-  if (m===n) m=(m+1)%deck.length;
-  room.seed = seed;
-  room.commitment = hash(seed);
-  room.assignments = [deck[n],deck[m]];
-  room.players.forEach((p,i)=>{p.identity=room.assignments[i];p.guesses=0;});
-  room.status = "playing";
-  room.round += 1;
-  room.log = [{type:"system",text:"Round "+room.round+" started. Ask yes/no questions in the game chat."}];
-  room.players.forEach(p=>sendPrivate(room,p));
-  broadcast(room);
-}
-function addLog(room, type, text, from) {
-  room.log.push({type,text,from:from||"Game",at:new Date().toISOString()});
-  if(room.log.length>80) room.log.shift();
-}
-io.on("connection", socket => {
-  socket.on("create", ({name,category}) => {
-    name=clean(name)||"Player 1";
-    if(!PEOPLE[category]) category="Footballers";
-    let code=makeCode(); while(rooms.has(code)) code=makeCode();
-    const room={code,category,players:[{name,socketId:socket.id,score:0,identity:null},{name:"",socketId:null,score:0,identity:null}],status:"waiting",round:0,log:[],seed:null,commitment:null,assignments:[]};
-    rooms.set(code,room); socket.join(code); socket.data.code=code; socket.emit("joined",{code,seat:0}); broadcast(room);
-  });
-  socket.on("join", ({code,name}) => {
-    code=clean(code).toUpperCase(); name=clean(name)||"Player 2";
-    const room=rooms.get(code);
-    if(!room) return socket.emit("errorMsg","That room code was not found. Ask your friend for a fresh invite.");
-    let seat=room.players.findIndex(p=>p.socketId===socket.id);
-    if(seat<0) seat=room.players.findIndex(p=>!p.socketId);
-    if(seat<0) return socket.emit("errorMsg","This room already has two players.");
-    room.players[seat].name=name; room.players[seat].socketId=socket.id;
-    socket.join(code); socket.data.code=code; socket.emit("joined",{code,seat});
-    addLog(room,"system",name+" joined the game.");
-    if(room.players.every(p=>p.socketId)){beginRound(room);} else broadcast(room);
-  });
-  socket.on("chat", ({text}) => {
-    const room=rooms.get(socket.data.code); const p=room&&playerFor(room,socket.id);
-    text=String(text||"").trim().slice(0,240);
-    if(!room||!p||room.status!=="playing"||!text) return;
-    addLog(room,"chat",text,p.name); broadcast(room);
-  });
-  socket.on("answer", ({answer}) => {
-    const room=rooms.get(socket.data.code); const p=room&&playerFor(room,socket.id);
-    if(!room||!p||room.status!=="playing"||!["Yes","No","Not sure"].includes(answer)) return;
-    addLog(room,"answer",answer,p.name); broadcast(room);
-  });
-  socket.on("guess", ({guess}) => {
-    const room=rooms.get(socket.data.code); const p=room&&playerFor(room,socket.id);
-    if(!room||!p||room.status!=="playing") return;
-    const target=room.players[room.players.indexOf(p)===0?1:0];
-    const correct=String(guess||"").trim().toLowerCase()===String(target.identity||"").toLowerCase();
-    p.guesses++;
-    if(correct) {
-      p.score+=10; room.status="finished";
-      addLog(room,"system",p.name+" guessed correctly and wins 10 points!");
-      io.to(room.code).emit("reveal",{identities:room.players.map(x=>x.identity),seed:room.seed,commitment:room.commitment,correctBy:p.name});
-    } else {
-      addLog(room,"system",p.name+" made an incorrect guess. The round continues.");
-      socket.emit("guessResult",{correct:false,message:"Not quite. Keep asking questions."});
-    }
-    broadcast(room);
-  });
-  socket.on("revealRequest", () => {
-    const room=rooms.get(socket.data.code); if(!room||room.status!=="finished") return;
-    socket.emit("reveal",{identities:room.players.map(x=>x.identity),seed:room.seed,commitment:room.commitment});
-  });
-  socket.on("rematch", () => {
-    const room=rooms.get(socket.data.code);
-    if(!room || !playerFor(room,socket.id)) return;
-    if(room.status!=="finished") return socket.emit("errorMsg","The next round becomes available after someone guesses correctly.");
-    if(room.players.some(p=>!p.socketId)) return socket.emit("errorMsg","Both players must be connected to start the next round.");
-    beginRound(room);
-  });
-  socket.on("disconnect", () => {
-    const code=socket.data.code, room=rooms.get(code); if(!room) return;
-    const p=playerFor(room,socket.id); if(p){p.socketId=null; addLog(room,"system",p.name+" disconnected. They can rejoin using the same room code.");}
-    broadcast(room);
-    setTimeout(()=>{const r=rooms.get(code); if(r&&r.players.every(x=>!x.socketId)) rooms.delete(code);},1000*60*60);
-  });
+function conversationKey(a,b){return [a,b].sort().join(":");}
+function emitToUser(userId,event,payload){io.to("user:"+userId).emit(event,payload);}
+
+app.post("/api/register",(req,res)=>{
+  const name=String(req.body.name||"").trim().slice(0,40);
+  const phone=normalPhone(req.body.phone);
+  const pin=String(req.body.pin||"");
+  if(name.length<2 || phone.length<7 || !/^\d{4,8}$/.test(pin)) return res.status(400).json({error:"Enter your name, a valid phone number and a 4–8 digit PIN."});
+  if([...users.values()].some(u=>u.phone===phone)) return res.status(409).json({error:"That phone number is already registered. Please sign in."});
+  const salt=crypto.randomBytes(16).toString("hex");
+  const user={id:makeId(),name,phone,bio:"",salt,pinHash:hashPin(pin,salt),joinedAt:new Date().toISOString()};
+  users.set(user.id,user);
+  const token=makeId(); tokens.set(token,user.id);
+  res.json({token,user:safeUser(user)});
 });
-server.listen(PORT,"0.0.0.0",()=>console.log("Who Am I? listening on "+PORT));
+app.post("/api/login",(req,res)=>{
+  const phone=normalPhone(req.body.phone),pin=String(req.body.pin||"");
+  const user=[...users.values()].find(u=>u.phone===phone);
+  if(!user || hashPin(pin,user.salt)!==user.pinHash) return res.status(401).json({error:"Incorrect phone number or PIN."});
+  const token=makeId(); tokens.set(token,user.id);
+  res.json({token,user:safeUser(user)});
+});
+app.post("/api/logout",auth,(req,res)=>{tokens.delete(req.token);res.json({ok:true});});
+app.get("/api/me",auth,(req,res)=>res.json({user:safeUser(req.user)}));
+app.patch("/api/me",auth,(req,res)=>{
+  const name=String(req.body.name||req.user.name).trim().slice(0,40);
+  const bio=String(req.body.bio||"").trim().slice(0,160);
+  if(name.length<2)return res.status(400).json({error:"Name is too short."});
+  req.user.name=name;req.user.bio=bio;res.json({user:safeUser(req.user)});
+});
+app.get("/api/users/find",auth,(req,res)=>{
+  const phone=normalPhone(req.query.phone);
+  const found=[...users.values()].find(u=>u.phone===phone && u.id!==req.user.id);
+  if(!found)return res.status(404).json({error:"No member found with that number."});
+  res.json({user:safeUser(found)});
+});
+app.get("/api/posts",auth,(req,res)=>res.json({posts:posts.slice().reverse().map(p=>safePost(p,req.user.id))}));
+app.post("/api/posts",auth,(req,res)=>{
+  const body=String(req.body.body||"").trim().slice(0,2000);
+  if(!body)return res.status(400).json({error:"Write something before posting."});
+  const post={id:makeId(),authorId:req.user.id,body,createdAt:new Date().toISOString(),likes:[],comments:[]};
+  posts.push(post);const result=safePost(post,req.user.id);
+  io.emit("post:new",result);res.status(201).json({post:result});
+});
+app.post("/api/posts/:id/like",auth,(req,res)=>{
+  const post=posts.find(p=>p.id===req.params.id);if(!post)return res.status(404).json({error:"Post not found."});
+  const i=post.likes.indexOf(req.user.id);if(i>=0)post.likes.splice(i,1);else post.likes.push(req.user.id);
+  res.json({post:safePost(post,req.user.id)});
+});
+app.post("/api/posts/:id/comments",auth,(req,res)=>{
+  const post=posts.find(p=>p.id===req.params.id);const body=String(req.body.body||"").trim().slice(0,1000);
+  if(!post)return res.status(404).json({error:"Post not found."});if(!body)return res.status(400).json({error:"Comment cannot be empty."});
+  const comment={id:makeId(),authorId:req.user.id,body,createdAt:new Date().toISOString(),replies:[]};
+  post.comments.push(comment);const result=safePost(post,req.user.id);io.emit("post:updated",result);res.status(201).json({post:result});
+});
+app.post("/api/posts/:postId/comments/:commentId/replies",auth,(req,res)=>{
+  const post=posts.find(p=>p.id===req.params.postId);const comment=post&&post.comments.find(c=>c.id===req.params.commentId);
+  const body=String(req.body.body||"").trim().slice(0,1000);
+  if(!comment)return res.status(404).json({error:"Comment not found."});if(!body)return res.status(400).json({error:"Reply cannot be empty."});
+  comment.replies.push({id:makeId(),authorId:req.user.id,body,createdAt:new Date().toISOString()});
+  const result=safePost(post,req.user.id);io.emit("post:updated",result);res.status(201).json({post:result});
+});
+app.get("/api/inbox",auth,(req,res)=>{
+  const list=[...conversations.values()].filter(c=>c.members.includes(req.user.id)).map(c=>{
+    const otherId=c.members.find(id=>id!==req.user.id),other=safeUser(users.get(otherId)),items=messages.get(c.id)||[];
+    return {id:c.id,other,lastMessage:items[items.length-1]||null,unread:items.filter(m=>m.to===req.user.id&&!m.read).length};
+  }).sort((a,b)=>String(b.lastMessage?.createdAt||"").localeCompare(String(a.lastMessage?.createdAt||"")));
+  res.json({conversations:list});
+});
+app.get("/api/messages/:otherId",auth,(req,res)=>{
+  const key=conversationKey(req.user.id,req.params.otherId),c=conversations.get(key);
+  if(!c)return res.json({conversationId:key,messages:[]});
+  const items=messages.get(key)||[];items.forEach(m=>{if(m.to===req.user.id)m.read=true;});
+  res.json({conversationId:key,messages:items});
+});
+app.post("/api/messages/:otherId",auth,(req,res)=>{
+  const other=users.get(req.params.otherId),body=String(req.body.body||"").trim().slice(0,2000);
+  if(!other||other.id===req.user.id)return res.status(404).json({error:"Member not found."});
+  if(!body)return res.status(400).json({error:"Message cannot be empty."});
+  const key=conversationKey(req.user.id,other.id);
+  if(!conversations.has(key))conversations.set(key,{id:key,members:[req.user.id,other.id]});
+  const item={id:makeId(),from:req.user.id,to:other.id,body,createdAt:new Date().toISOString(),read:false};
+  const items=messages.get(key)||[];items.push(item);messages.set(key,items);
+  emitToUser(other.id,"message:new",{conversationId:key,message:item,from:safeUser(req.user)});
+  res.status(201).json({message:item});
+});
+
+io.use((socket,next)=>{
+  const userId=tokens.get(socket.handshake.auth?.token);
+  const user=users.get(userId);
+  if(!user)return next(new Error("Please sign in."));
+  socket.user=user;next();
+});
+io.on("connection",socket=>{socket.join("user:"+socket.user.id);});
+server.listen(PORT,"0.0.0.0",()=>console.log("Social Hub listening on "+PORT));
