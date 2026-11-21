@@ -100,4 +100,57 @@ if(token)enter();authMode();
  document.addEventListener('click',e=>{if(e.target.closest('#publish'))setTimeout(refreshHero,350);});
  setTimeout(refreshHero,500);
 })();
+</script>
+<script id="social-hub-features">
+(function(){
+ const style=document.createElement('style');style.textContent=`
+ .featurebar{display:flex;gap:9px;flex-wrap:wrap;margin:0 0 15px}
+ .featurebar button{flex:1;min-width:110px;border-radius:13px;padding:11px 12px}
+ .storyrail{display:flex;gap:11px;overflow-x:auto;padding:4px 1px 15px;scrollbar-width:thin}
+ .storytile{flex:0 0 104px;height:138px;border-radius:17px;background:linear-gradient(145deg,#233d79,#6589e8);color:#fff;padding:10px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;cursor:pointer;border:2px solid #fff;box-shadow:0 5px 18px #243e751c}
+ .storytile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.7}
+ .storytile>*{position:relative;z-index:1}.storytile .storyplus{font-size:28px;background:#ffffff2b;border-radius:50%;width:34px;height:34px;display:grid;place-items:center}
+ .featurepanel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:var(--shadow)}
+ .personrow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid var(--line)}
+ .personrow:last-child{border:0}.personrow .avatar{width:40px;height:40px}.personrow .personmeta{flex:1;min-width:0}
+ .personrow button{padding:8px 12px;font-size:12px}.noticeitem{padding:12px;border-bottom:1px solid var(--line);font-size:14px}
+ .noticeitem.unread{background:#f0f5ff}.noticeitem small{display:block;color:var(--muted);margin-top:4px}
+ .postmedia{width:100%;max-height:460px;object-fit:cover;border-radius:15px;margin:8px 0 12px}
+ .featuremodal{position:fixed;inset:0;background:#101b32a6;z-index:30;display:flex;align-items:center;justify-content:center;padding:16px}
+ .featuremodal>div{width:min(520px,100%);max-height:85vh;overflow:auto;background:white;border-radius:20px;padding:18px}
+ .storyview{position:fixed;inset:0;background:#0d1424ed;z-index:40;display:flex;align-items:center;justify-content:center;padding:18px}
+ .storyview>div{width:min(440px,100%);background:#192640;color:#fff;border-radius:22px;overflow:hidden}
+ .storyview img{width:100%;max-height:65vh;object-fit:contain;background:#101827}.storyview p{padding:14px}
+ `;document.head.appendChild(style);
+ const feedView=document.getElementById('feedView');if(!feedView)return;
+ const composer=feedView.querySelector('.composer');
+ const rail=document.createElement('section');rail.className='featurepanel';rail.innerHTML='<div class="section"><h2>Stories</h2><span class="small">Disappear after 24 hours</span></div><div class="storyrail" id="storyRail"><div class="storytile" id="addStory"><span class="storyplus">＋</span><b>Add to your story</b></div></div>';
+ feedView.insertBefore(rail,composer);
+ const bar=document.createElement('div');bar.className='featurebar';bar.innerHTML='<button class="sub" id="discoverBtn">⌕ Discover people</button><button class="sub" id="notificationsBtn">♧ Notifications <span id="noticeBadge"></span></button>';
+ feedView.insertBefore(bar,composer);
+ const photo=document.createElement('button');photo.type='button';photo.className='sub';photo.id='attachPhoto';photo.textContent='▧ Add photo';
+ composer.querySelector('.composerfoot').insertBefore(photo,composer.querySelector('#publish'));
+ const file=document.createElement('input');file.type='file';file.accept='image/jpeg,image/png,image/webp,image/gif';file.hidden=true;file.id='postImageInput';composer.appendChild(file);
+ let pendingMedia='',storiesCache=[];
+ async function uploadImage(f){const fd=new FormData();fd.append('image',f);const r=await fetch('/api/upload',{method:'POST',headers:{Authorization:'Bearer '+token},body:fd});const d=await r.json();if(!r.ok)throw Error(d.error||'Upload failed');return d.url}
+ function modal(title,content){const m=document.createElement('div');m.className='featuremodal';m.innerHTML='<div><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>'+title+'</h2><button class="sub" data-close>Close</button></div>'+content+'</div>';m.addEventListener('click',e=>{if(e.target===m||e.target.closest('[data-close]'))m.remove()});document.body.appendChild(m);return m}
+ async function loadStories(){try{const d=await api('/stories');storiesCache=d.stories||[];const el=document.getElementById('storyRail');if(!el)return;el.innerHTML='<div class="storytile" id="addStory"><span class="storyplus">＋</span><b>Add to your story</b></div>'+storiesCache.map(s=>'<div class="storytile" data-story="'+s.id+'">'+(s.mediaUrl?'<img src="'+s.mediaUrl+'" alt="">':'')+'<span class="storyplus">'+(s.author?.name||'M').slice(0,1).toUpperCase()+'</span><b>'+String(s.author?.name||'Member').replace(/[&<>"]/g,'')+'</b></div>').join('');el.querySelector('#addStory').onclick=createStory;el.querySelectorAll('[data-story]').forEach(x=>x.onclick=()=>showStory(x.dataset.story));}catch(e){}}
+ function createStory(){const m=modal('Create a story','<textarea id="storyText" placeholder="Share a moment..." maxlength="500"></textarea><p class="small">You can also add a photo (up to 8 MB).</p><input id="storyFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif"><button id="publishStory" style="width:100%;margin-top:12px">Share story</button>');m.querySelector('#publishStory').onclick=async()=>{try{let mediaUrl='';const f=m.querySelector('#storyFile').files[0];if(f)mediaUrl=await uploadImage(f);const body=m.querySelector('#storyText').value.trim();await api('/stories',{method:'POST',body:JSON.stringify({body,mediaUrl})});m.remove();await loadStories();}catch(e){alert(e.message)}}}
+ function showStory(id){const s=storiesCache.find(x=>x.id===id);if(!s)return;const v=document.createElement('div');v.className='storyview';v.innerHTML='<div><div style="display:flex;justify-content:space-between;padding:12px"><b>'+String(s.author?.name||'Member').replace(/[&<>"]/g,'')+'</b><button class="sub" id="closeStory">✕</button></div>'+(s.mediaUrl?'<img src="'+s.mediaUrl+'" alt="Story">':'')+'<p>'+String(s.body||'').replace(/[&<>"]/g,'')+'</p></div>';v.querySelector('#closeStory').onclick=()=>v.remove();v.onclick=e=>{if(e.target===v)v.remove()};document.body.appendChild(v)}
+ document.getElementById('addStory').onclick=createStory;
+ photo.onclick=()=>file.click();
+ file.onchange=()=>{const f=file.files[0];if(f){if(f.size>8*1024*1024){alert('Choose an image under 8 MB.');file.value='';return}photo.textContent='▧ '+f.name.slice(0,18);}};
+ document.getElementById('publish').onclick=async()=>{try{const body=document.getElementById('postText').value.trim();const f=file.files[0];if(!body&&!f)return alert('Write something or add a photo.');let mediaUrl='';if(f)mediaUrl=await uploadImage(f);await api('/posts',{method:'POST',body:JSON.stringify({body,mediaUrl})});document.getElementById('postText').value='';file.value='';photo.textContent='▧ Add photo';await loadFeed()}catch(e){alert(e.message)}};
+ document.getElementById('discoverBtn').onclick=async()=>{const m=modal('Discover people','<input id="discoverQuery" placeholder="Search by name or phone number"><div id="discoverResults" style="margin-top:10px"></div>');const search=async()=>{try{const d=await api('/discover?q='+encodeURIComponent(m.querySelector('#discoverQuery').value));m.querySelector('#discoverResults').innerHTML=d.people.map(u=>'<div class="personrow"><div class="avatar">'+String(u.name[0]||'M').toUpperCase()+'</div><div class="personmeta"><b>'+String(u.name).replace(/[&<>"]/g,'')+'</b><div class="small">'+u.followerCount+' followers</div></div><button data-follow="'+u.id+'">'+(u.following?'Following':'Follow')+'</button></div>').join('')||'<div class="empty">No members found.</div>';m.querySelectorAll('[data-follow]').forEach(b=>b.onclick=async()=>{try{const r=await api('/users/'+b.dataset.follow+'/follow',{method:'POST'});b.textContent=r.following?'Following':'Follow';await search()}catch(e){alert(e.message)}})}catch(e){m.querySelector('#discoverResults').textContent=e.message}};m.querySelector('#discoverQuery').oninput=search;await search()};
+ document.getElementById('notificationsBtn').onclick=async()=>{try{const d=await api('/notifications');const m=modal('Notifications','<div id="noticeList">'+d.notifications.map(n=>'<div class="noticeitem '+(!n.read?'unread':'')+'"><b>'+String(n.actor?.name||'A member').replace(/[&<>"]/g,'')+'</b> '+String(n.text).replace(/[&<>"]/g,'')+'<small>'+new Date(n.createdAt).toLocaleString()+'</small></div>').join('')+'</div>');if(!d.notifications.length)m.querySelector('#noticeList').innerHTML='<div class="empty">You are all caught up.</div>';await api('/notifications/read',{method:'POST'});document.getElementById('noticeBadge').textContent='';}catch(e){alert(e.message)}};
+ async function loadNotifications(){try{const d=await api('/notifications');document.getElementById('noticeBadge').textContent=d.unread?' · '+d.unread:''}catch(e){}}
+ const originalRender=window.renderFeed;
+ const patchFeed=()=>{document.querySelectorAll('#feed .post').forEach(card=>{const text=card.querySelector('.postbody');const postText=text?.textContent;const p=posts.find(x=>x.body===postText);if(p?.mediaUrl&&!card.querySelector('.postmedia')){const img=document.createElement('img');img.className='postmedia';img.src=p.mediaUrl;img.alt='Post attachment';text?.after(img)}})};
+ const feedEl=document.getElementById('feed');new MutationObserver(patchFeed).observe(feedEl,{childList:true,subtree:true});
+ const oldEnter=enter;
+ window.addEventListener('socialhub:refresh',()=>{loadStories();loadNotifications()});
+ const origConnect=connect;connect=function(){origConnect();if(socket){socket.on('notification:new',loadNotifications);socket.on('story:new',loadStories)}};
+ const oldLoadFeed=loadFeed;loadFeed=async function(){await oldLoadFeed();patchFeed()};
+ const oldLoadInbox=loadInbox;loadInbox=async function(){await oldLoadInbox();loadNotifications();loadStories()};
+})();
 </script></body></html>
