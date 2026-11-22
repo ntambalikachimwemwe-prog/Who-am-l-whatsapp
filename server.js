@@ -30,10 +30,15 @@ const shuffle = list => {
 const playerFor = (room, socketId) => room.players.find(p => p.socketId === socketId);
 const progressFor = (p, room) => p.arrangement.reduce((n, id, i) => n + (id === room.target[i] ? 1 : 0), 0);
 
-function publicState(room) {
+function publicState(room, viewerSeat) {
+  const isSorter = viewerSeat === room.activeSeat;
   return {
     code: room.code, status: room.status, round: room.round,
-    target: room.target, players: room.players.map((p, seat) => ({
+    // The target is sent only to the observer/opponent, never to the player sorting.
+    target: isSorter ? null : room.target,
+    activeSeat: room.activeSeat,
+    isSorter,
+    players: room.players.map((p, seat) => ({
       seat, name: p.name, connected: !!p.socketId, arrangement: p.arrangement,
       progress: room.status === "waiting" ? 0 : progressFor(p, room),
       score: p.score, roundPoints: room.status === "playing" ? progressFor(p, room) * 10 : p.lastRoundPoints || 0
@@ -41,30 +46,37 @@ function publicState(room) {
     winner: room.winner, chat: room.chat.slice(-60)
   };
 }
-function broadcast(room) { io.to(room.code).emit("state", publicState(room)); }
+function broadcast(room) {
+  room.players.forEach((p, seat) => {
+    if (p.socketId) io.to(p.socketId).emit("state", publicState(room, seat));
+  });
+}
 function addChat(room, kind, text, from) {
   room.chat.push({ kind, text, from: from || "Game", at: new Date().toISOString() });
   if (room.chat.length > 100) room.chat.shift();
 }
 function beginRound(room) {
   room.target = shuffle(OBJECTS.map(x => x.id));
+  room.round += 1;
+  room.activeSeat = (room.round - 1) % 2;
   room.players.forEach(p => {
     p.arrangement = shuffle(OBJECTS.map(x => x.id));
     while (p.arrangement.every((id, i) => id === room.target[i])) p.arrangement = shuffle(OBJECTS.map(x => x.id));
     p.lastRoundPoints = 0;
   });
-  room.round += 1;
   room.winner = null;
   room.status = "playing";
-  addChat(room, "system", "Round " + room.round + " is live! Arrange all four objects in the target order.");
+  const sorter = room.players[room.activeSeat];
+  const observer = room.players[1 - room.activeSeat];
+  addChat(room, "system", "Round " + room.round + ": " + sorter.name + " is sorting. " + observer.name + " can see the target and guide them in chat.");
   broadcast(room);
 }
 function finishRound(room, winner) {
   if (room.status !== "playing") return;
   room.status = "finished";
   room.winner = winner.name;
-  room.players.forEach(p => {
-    const points = progressFor(p, room) * 10 + (p === winner ? 20 : 0);
+  room.players.forEach((p, seat) => {
+    const points = seat === room.activeSeat ? progressFor(p, room) * 10 + (p === winner ? 20 : 0) : 0;
     p.lastRoundPoints = points;
     p.score += points;
   });
@@ -82,7 +94,7 @@ io.on("connection", socket => {
     let code = makeCode();
     while (rooms.has(code)) code = makeCode();
     const room = {
-      code, status: "waiting", round: 0, target: [], winner: null, chat: [],
+      code, status: "waiting", round: 0, target: [], activeSeat: 0, winner: null, chat: [],
       players: [
         { name, socketId: socket.id, arrangement: [], score: 0, lastRoundPoints: 0 },
         { name: "", socketId: null, arrangement: [], score: 0, lastRoundPoints: 0 }
@@ -117,7 +129,7 @@ io.on("connection", socket => {
   socket.on("move", payload => {
     const room = rooms.get(socket.data.code);
     const p = room && playerFor(room, socket.id);
-    if (!room || !p || room.status !== "playing") return;
+    if (!room || !p || room.status !== "playing" || room.players[room.activeSeat] !== p) return;
     const from = Number(payload && payload.from), to = Number(payload && payload.to);
     if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from > 3 || to < 0 || to > 3 || from === to) return;
     [p.arrangement[from], p.arrangement[to]] = [p.arrangement[to], p.arrangement[from]];
