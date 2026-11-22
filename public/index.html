@@ -1,70 +1,93 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><meta name="description" content="Play Who Am I? with a friend. Get a secret identity, ask questions and guess to win."><title>Who Am I? — Play with a friend</title>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#17152b"><meta name="description" content="A live two-player sorting battle. Invite a friend with a room code and race to sort the same objects.">
+<title>Sorting Battle — Play with a friend</title>
 <style>
-:root{color-scheme:dark;--bg:#0b1220;--panel:#121e31;--line:#26364d;--text:#f2f6fc;--muted:#9aabc1;--accent:#7cdbb2;--blue:#8ab4ff}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#182b42 0,#0b1220 55%);font:16px system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text);min-height:100vh}
-main{max-width:760px;margin:auto;padding:24px 16px 60px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.logo{width:48px;height:48px;border-radius:15px;background:var(--accent);color:#09251d;display:grid;place-items:center;font-size:26px;font-weight:900}.brand h1{font-size:23px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:14px}
-.card{background:rgba(18,30,49,.96);border:1px solid var(--line);border-radius:18px;padding:20px;margin:14px 0;box-shadow:0 12px 32px #0002}.hidden{display:none!important}h2{font-size:19px;margin:0 0 14px}label{display:block;color:var(--muted);font-size:13px;margin:12px 0 6px}input,select,button{font:inherit}input,select{width:100%;background:#0b1627;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:13px;outline:none;min-width:0}input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px #7cdbb222}button{border:0;border-radius:11px;padding:12px 16px;background:var(--accent);color:#08251c;font-weight:750;cursor:pointer;transition:filter .15s,transform .15s}button:active{transform:scale(.98)}button.secondary{background:#253750;color:var(--text);border:1px solid #344861}button:disabled{opacity:.45;cursor:not-allowed}.row{display:flex;gap:10px;align-items:center}.row>*{flex:1}.muted{color:var(--muted);font-size:13px;line-height:1.5}.roomcode{font-size:30px;letter-spacing:5px;font-weight:850;color:var(--accent)}.topline{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.pill{font-size:12px;padding:6px 10px;background:#20344a;border-radius:99px;color:var(--blue)}.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}.player{background:#0c1829;border:1px solid var(--line);padding:12px;border-radius:12px}.player strong{display:block;overflow-wrap:anywhere}.player small{color:var(--muted)}.secret{border:1px dashed #6ab99a;background:#102b29;padding:16px;border-radius:14px}.secret b{font-size:24px;color:var(--accent)}.secret img{max-width:100%;max-height:180px;object-fit:contain;border-radius:12px;display:block;margin:12px auto 0}.chatlog{height:260px;overflow:auto;background:#091321;border:1px solid var(--line);border-radius:12px;padding:12px;scroll-behavior:smooth}.msg{padding:9px 11px;border-radius:10px;background:#16263a;margin:7px 0;overflow-wrap:anywhere;line-height:1.4}.msg.system{background:#17332e;color:#bdf3dd}.msg small{color:var(--muted);display:block;font-size:11px;margin-bottom:3px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions button{flex:1;min-width:90px}.error{color:#ff9e9e;margin-top:10px}.score{font-size:22px;font-weight:800}.foot{text-align:center;color:var(--muted);font-size:12px;margin:22px 0}.tag{color:var(--accent);font-size:12px;font-weight:700;letter-spacing:1px}.connection{font-size:12px;padding:6px 10px;border-radius:99px;background:#39252b;color:#ffb4b4}.connection.online{background:#17332e;color:#bdf3dd}.suggestions{display:flex;gap:7px;overflow-x:auto;padding:4px 0 9px}.suggestions button{white-space:nowrap;font-size:12px;padding:8px 10px}.hint{border-left:3px solid var(--accent);padding:8px 11px;background:#0d1a2a;border-radius:0 9px 9px 0;margin:10px 0}
-@media(max-width:520px){main{padding:18px 12px 40px}.card{padding:16px}.row{gap:8px}.roomcode{font-size:25px}.players{gap:7px}.player{padding:9px}.brand h1{font-size:21px}}
-</style></head><body><main>
-<header class="brand"><div class="logo">?</div><div style="flex:1"><h1>WHO AM I?</h1><p>Two players. Secret identities. One winner.</p></div><span id="connection" class="connection">Connecting…</span></header>
+:root{color-scheme:dark;--bg:#11101e;--panel:#1c1a30;--panel2:#24213b;--line:#383452;--text:#f8f5ff;--muted:#aaa5c3;--pink:#ff6d9e;--gold:#ffd36e;--mint:#7ee5c1;--blue:#9c9bff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% -15%,#393052 0,transparent 52%),var(--bg);color:var(--text);font:15px system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:980px;margin:auto;padding:22px 15px 70px}.brand{display:flex;align-items:center;gap:12px;margin-bottom:20px}.logo{width:48px;height:48px;border-radius:16px;background:linear-gradient(135deg,var(--pink),#a78bfa);display:grid;place-items:center;font-size:25px;box-shadow:0 8px 24px #ff6d9e30}.brand h1{margin:0;font-size:22px;letter-spacing:.4px}.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}.grow{flex:1}.online{font-size:12px;color:var(--mint)}
+.card{background:#1c1a30ed;border:1px solid var(--line);border-radius:19px;padding:19px;margin:13px 0;box-shadow:0 14px 35px #0002}.hidden{display:none!important}h2{font-size:18px;margin:0 0 13px}.muted{color:var(--muted);font-size:13px;line-height:1.55}.tag{color:var(--pink);font-size:11px;font-weight:850;letter-spacing:1.5px}.field{margin:12px 0}.field label{display:block;color:var(--muted);font-size:12px;margin:0 0 6px}input,button{font:inherit}input{width:100%;min-width:0;background:#11101e;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:13px;outline:none}input:focus{border-color:var(--pink);box-shadow:0 0 0 3px #ff6d9e20}button{border:0;border-radius:12px;padding:12px 15px;background:linear-gradient(135deg,var(--pink),#c084fc);color:#241328;font-weight:800;cursor:pointer}button:disabled{opacity:.4;cursor:not-allowed}.secondary{background:#302c49;color:var(--text);border:1px solid #494365;box-shadow:none}.row{display:flex;align-items:center;gap:9px}.row>*{flex:1}.code{font-size:30px;letter-spacing:6px;color:var(--gold);font-weight:900}.pill{border-radius:99px;background:#302c49;padding:6px 10px;font-size:12px;color:var(--blue)}.players{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.player{border:1px solid var(--line);border-radius:13px;background:#151427;padding:12px;min-width:0}.player strong{display:block;overflow-wrap:anywhere}.player small{color:var(--muted)}.boards{display:grid;grid-template-columns:1fr 1fr;gap:13px}.board{background:#151427;border:1px solid var(--line);border-radius:15px;padding:13px;min-width:0}.boardhead{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:10px}.boardhead strong{font-size:14px}.slots{display:grid;gap:8px}.slot{display:flex;align-items:center;gap:10px;min-height:58px;background:#211e37;border:1px solid #3b3658;border-radius:12px;padding:8px;position:relative}.slot.correct{border-color:#4b9e84;background:#16352f}.slot.dragover{outline:2px dashed var(--gold)}.num{width:25px;height:25px;border-radius:8px;background:#393451;color:#d6d0eb;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}.obj{font-size:28px;width:38px;text-align:center;flex:none}.objname{font-size:13px;font-weight:700;flex:1}.arrows{display:flex;gap:4px}.arrows button{padding:5px 8px;border-radius:8px;font-size:12px;min-width:29px}.correct .num{background:#245b4d;color:#caffec}.correctmark{color:var(--mint);font-weight:900}.target .slot{background:#292440}.target .obj{font-size:25px}.progressline{height:8px;background:#302c49;border-radius:99px;overflow:hidden;margin:8px 0}.progressfill{height:100%;background:linear-gradient(90deg,var(--pink),var(--gold));width:0%;transition:width .2s}.chatlog{height:190px;overflow:auto;background:#121120;border:1px solid var(--line);border-radius:12px;padding:10px}.msg{padding:8px 10px;background:#292640;border-radius:10px;margin:6px 0;overflow-wrap:anywhere}.msg.system{background:#17352f;color:#b7f5df}.msg small{display:block;color:var(--muted);font-size:10px;margin-bottom:2px}.scoreline{display:flex;justify-content:space-between;gap:12px}.score{font-size:23px;font-weight:900;color:var(--gold)}.notice{padding:12px;border-radius:12px;background:#2d2540;border:1px solid #55416c;margin-top:10px;line-height:1.5}.error{color:#ff9baa;margin-top:8px}.footer{text-align:center;color:var(--muted);font-size:12px;margin:20px}.how{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.how div{background:#151427;border:1px solid var(--line);padding:12px;border-radius:12px}.how b{display:block;color:var(--gold);margin-bottom:4px}
+@media(max-width:650px){main{padding:15px 11px 45px}.card{padding:14px;border-radius:16px}.brand h1{font-size:20px}.boards{grid-template-columns:1fr}.players{gap:7px}.code{font-size:25px}.how{grid-template-columns:1fr}.chatlog{height:160px}.slot{min-height:54px}.board{padding:11px}}
+</style></head>
+<body><main>
+<header class="brand"><div class="logo">⚡</div><div><h1>SORTING BATTLE</h1><p>Two players · One challenge · Race to finish</p></div><div class="grow"></div><span id="connection" class="online">Connecting…</span></header>
 <section id="home">
-<div class="card"><span class="tag">START A GAME</span><h2 style="margin-top:8px">Play with a friend</h2>
-<label for="name">Your name</label><input id="name" maxlength="32" placeholder="Enter your name" autocomplete="nickname">
-<label for="category">Choose a category</label><select id="category"><option>Footballers</option><option>Musicians</option><option>Actors</option><option>Politicians</option><option>African celebrities</option></select>
-<button id="create" style="width:100%;margin-top:16px">Create a private room</button>
-<div style="height:1px;background:var(--line);margin:20px 0"></div>
-<label for="code">Have a room code?</label><div class="row"><input id="code" maxlength="6" placeholder="6-character code" autocapitalize="characters"><button id="join" class="secondary">Join game</button></div>
-<p class="muted">Create a room, then share its code or invite link with your friend on WhatsApp.</p><div id="homeError" class="error" role="alert"></div></div>
-<div class="card"><h2>How to play</h2><p class="muted">1. Create a room and invite one friend.<br>2. Each player receives a secret identity.<br>3. Ask yes/no questions to discover your friend's identity.<br>4. Make a guess. A correct guess earns 10 points.</p></div>
+ <div class="card"><span class="tag">CHALLENGE A FRIEND</span><h2 style="margin-top:7px">Ready for a sorting battle?</h2>
+  <div class="field"><label for="name">Your player name</label><input id="name" maxlength="32" placeholder="Enter your name" autocomplete="nickname"></div>
+  <button id="create" style="width:100%">CREATE A ROOM</button>
+  <div style="height:1px;background:var(--line);margin:18px 0"></div>
+  <div class="field"><label for="code">Have a shared room code?</label><div class="row"><input id="code" maxlength="8" placeholder="Enter room code" autocapitalize="characters"><button id="join" class="secondary">JOIN</button></div></div>
+  <div id="homeError" class="error" role="alert"></div>
+ </div>
+ <div class="card"><h2>How to play</h2><div class="how"><div><b>1. Join together</b><span class="muted">Create a room and send its code to your friend on WhatsApp.</span></div><div><b>2. Sort the objects</b><span class="muted">Both players get the same target order. Move objects into the matching positions.</span></div><div><b>3. Win the race</b><span class="muted">Every correct position earns 10 points. First to 4/4 wins the round.</span></div></div></div>
 </section>
 <section id="game" class="hidden">
-<div class="card"><div class="topline"><div><div class="muted">ROOM CODE</div><div class="roomcode" id="roomCode">------</div></div><div class="actions" style="margin:0"><button id="copyCode" class="secondary">Copy code</button><button id="share" class="secondary">Share invite</button></div></div><p class="muted" id="status" aria-live="polite">Waiting for player 2…</p><div class="players" id="players"></div></div>
-<div class="card"><div class="topline"><h2>Your secret identity</h2><span class="pill" id="categoryLabel">Footballers</span></div>
-<div class="secret"><div class="muted">Only you can see this. Your friend must guess who you are.</div><b id="identity">Waiting…</b><img id="identityImage" class="hidden" alt="Public reference picture of your assigned identity"><div id="imageNote" class="muted"></div></div>
-<p class="muted">Discover the identity assigned to your opponent. Ask questions and answer honestly.</p></div>
-<div class="card"><h2>Game chat</h2><div id="chatlog" class="chatlog" aria-live="polite" aria-label="Game messages"></div>
-<p class="muted" style="margin-bottom:4px">Quick question ideas</p><div class="suggestions"><button class="secondary prompt" data-prompt="Are you a footballer?">Footballer?</button><button class="secondary prompt" data-prompt="Are you African?">African?</button><button class="secondary prompt" data-prompt="Are you still alive?">Still alive?</button><button class="secondary prompt" data-prompt="Are you a man?">A man?</button><button class="secondary prompt" data-prompt="Are you famous for music?">Musician?</button></div>
-<div class="row" style="margin-top:8px"><input id="message" maxlength="240" placeholder="Ask a yes/no question…"><button id="send">Send</button></div>
-<div class="actions"><button class="secondary answer" data-answer="Yes">Answer: Yes</button><button class="secondary answer" data-answer="No">Answer: No</button><button class="secondary answer" data-answer="Not sure">Not sure</button></div>
-<label for="guess">Guess your opponent's identity</label><div class="row"><input id="guess" placeholder="Type their name" autocomplete="off"><button id="submitGuess">Make guess</button></div><div id="guessResult" class="muted" aria-live="polite"></div></div>
-<div class="card"><div class="topline"><div><h2>Scoreboard</h2><div class="muted">Correct guess = 10 points</div></div><div class="score" id="scores">0 — 0</div></div><div id="result" class="muted"></div><div class="actions"><button id="rematch">NEXT ROUND</button><button id="reveal" class="secondary">Verify last round</button></div><p id="verification" class="muted" aria-live="polite"></p></div>
-</section><div id="globalError" class="error" role="alert"></div><p class="foot">Play fairly. Share your room code privately. No third-party referee needed.</p>
+ <div class="card"><div class="row" style="align-items:center"><div style="min-width:0"><div class="muted">SHARE THIS ROOM CODE</div><div id="roomCode" class="code">------</div></div><div class="grow"></div><button id="copy" class="secondary">COPY</button><button id="share" class="secondary">WHATSAPP</button></div><div id="status" class="muted" style="margin-top:8px">Waiting for the second player…</div><div id="players" class="players"></div></div>
+ <div class="card"><div class="scoreline"><div><span class="tag">ROUND <span id="round">0</span></span><h2 style="margin:5px 0 0">Your sorting challenge</h2></div><span class="pill" id="phase">WAITING</span></div>
+  <p class="muted">Put the objects in exactly this target order. Your opponent sees every move you make.</p>
+  <div class="board target"><div class="boardhead"><strong>🎯 TARGET ORDER</strong><span class="pill">Same for both</span></div><div id="target" class="slots"></div></div>
+ </div>
+ <div class="card"><div class="boards">
+  <div class="board"><div class="boardhead"><strong>🙋 YOUR ARRANGEMENT</strong><span id="myProgress" class="pill">0/4</span></div><div class="progressline"><div id="myFill" class="progressfill"></div></div><div id="mine" class="slots"></div><div id="myPoints" class="muted" style="margin-top:8px">0 points this round</div></div>
+  <div class="board"><div class="boardhead"><strong>👀 OPPONENT LIVE</strong><span id="opProgress" class="pill">0/4</span></div><div class="progressline"><div id="opFill" class="progressfill"></div></div><div id="opponent" class="slots"></div><div id="opPoints" class="muted" style="margin-top:8px">0 points this round</div></div>
+ </div><div id="result" class="notice hidden" aria-live="polite"></div></div>
+ <div class="card"><h2>💬 Room chat</h2><div id="chatlog" class="chatlog" aria-live="polite"></div><div class="row" style="margin-top:9px"><input id="message" maxlength="300" placeholder="Send a message…"><button id="send">SEND</button></div></div>
+ <div class="card"><div class="scoreline"><div><h2>🏆 Match scoreboard</h2><div class="muted">Correct object = 10 points · Round winner bonus = 20</div></div><div id="score" class="score">0 : 0</div></div><div id="scoreNames" class="muted"></div></div>
+</section>
+<div id="globalError" class="error" role="alert"></div><p class="footer">Play together from anywhere. Share the room code in your WhatsApp chat.</p>
 </main>
-<script src="/socket.io/socket.io.js"></script><script>
-const socket=io();let mySeat=null,roomCode="",myIdentity="",currentState=null;
-const $=id=>document.getElementById(id);
-function show(id){$("home").classList.toggle("hidden",id!=="home");$("game").classList.toggle("hidden",id!=="game")}
-function err(t){$("homeError").textContent=t||"";$("globalError").textContent=t||""}
-function create(){err("");socket.emit("create",{name:$("name").value,category:$("category").value})}
-function join(){err("");$("code").value=$("code").value.toUpperCase().replace(/[^A-Z0-9]/g,"");socket.emit("join",{name:$("name").value,code:$("code").value})}
-$("create").onclick=create;$("join").onclick=join;
-socket.on("connect",()=>{$("connection").textContent="Connected";$("connection").classList.add("online");const q=new URLSearchParams(location.search).get("room");if(q){$("code").value=q.toUpperCase();$("name").focus()}});
-socket.on("disconnect",()=>{$("connection").textContent="Reconnecting…";$("connection").classList.remove("online");});
-socket.on("connect_error",()=>{$("connection").textContent="Connection problem";$("connection").classList.remove("online");});
-socket.on("joined",d=>{roomCode=d.code;mySeat=d.seat;$("roomCode").textContent=d.code;show("game");$("status").textContent="Room ready. Share the code with your friend."});
-socket.on("errorMsg",err);
-socket.on("assignment",async d=>{myIdentity=d.name;$("result").textContent="";$("verification").textContent="";$("guessResult").textContent="Round "+d.round+" has started. Your new identity is private.";$("identity").textContent=d.name;$("categoryLabel").textContent=d.category;$("imageNote").textContent="Looking for a public picture…";$("identityImage").classList.add("hidden");try{const r=await fetch("https://en.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(d.name));const j=await r.json();if(j.thumbnail&&j.thumbnail.source){$("identityImage").src=j.thumbnail.source;$("identityImage").classList.remove("hidden");$("imageNote").textContent="Public reference image from Wikipedia"}else{$("imageNote").textContent="No public picture found. The identity is still valid."}}catch(e){$("imageNote").textContent="Picture unavailable; continue playing."}$("guessResult").textContent="New round: your identity is locked in privately."});
-socket.on("state",s=>{currentState=s;$("roomCode").textContent=s.code;$("categoryLabel").textContent=s.category;$("status").textContent=s.status==="waiting"?"Waiting for your friend to join…":s.status==="playing"?"Round "+s.round+" is live":"Round finished — either player can press NEXT ROUND";
-$("players").innerHTML=s.players.map((p,i)=>'<div class="player"><strong>'+(i===mySeat?"You":"Opponent")+': '+escapeHtml(p.name||"Waiting…")+'</strong><small>'+(p.connected?"Connected":"Disconnected")+'</small></div>').join("");
-$("scores").textContent=s.players.map(p=>p.score).join(" — ");
-$("chatlog").innerHTML=s.log.map(m=>'<div class="msg '+(m.type==="system"?"system":"")+'"><small>'+escapeHtml(m.from||m.type||"Game")+'</small>'+escapeHtml(m.text)+'</div>').join("");$("chatlog").scrollTop=$("chatlog").scrollHeight;
-const playing=s.status==="playing";$("rematch").disabled=s.status!=="finished";$("submitGuess").disabled=!playing;$("send").disabled=!playing;document.querySelectorAll(".answer").forEach(b=>b.disabled=!playing);document.querySelectorAll(".prompt").forEach(b=>b.disabled=!playing);
-});
-socket.on("guessResult",r=>{$("guessResult").textContent=r.message});
-socket.on("reveal",async r=>{$("result").textContent="Round identities: "+r.identities.join(" vs ")+". Winner: "+(r.correctBy||"see chat");const expected=await cryptoHash(r.seed);$("verification").textContent="Fairness check: "+(expected===r.commitment?"PASS — seed matches the published commitment.":"Unable to verify commitment.")});
-async function cryptoHash(seed){const bytes=new TextEncoder().encode(seed);const digest=await crypto.subtle.digest("SHA-256",bytes);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("")}
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function sendMessage(){const t=$("message").value.trim();if(t){socket.emit("chat",{text:t});$("message").value=""}}
-$("send").onclick=sendMessage;$("message").addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage()});
-document.querySelectorAll(".answer").forEach(b=>b.onclick=()=>socket.emit("answer",{answer:b.dataset.answer}));
-document.querySelectorAll(".prompt").forEach(b=>b.onclick=()=>{$("message").value=b.dataset.prompt;$("message").focus()});
-$("submitGuess").onclick=()=>{const g=$("guess").value.trim();if(g){socket.emit("guess",{guess:g});$("guess").value=""}};
-$("guess").addEventListener("keydown",e=>{if(e.key==="Enter")$("submitGuess").click()});
-$("code").addEventListener("keydown",e=>{if(e.key==="Enter")join()});
-$("rematch").onclick=()=>socket.emit("rematch");$("reveal").onclick=()=>socket.emit("revealRequest");
-async function copyText(text){try{await navigator.clipboard.writeText(text);$("status").textContent="Copied. You can now paste it into WhatsApp."}catch(e){$("status").textContent="Copy unavailable. Room code: "+roomCode}}
-$("copyCode").onclick=()=>copyText(roomCode);
-$("share").onclick=async()=>{const link=location.origin+"/?room="+roomCode;try{if(navigator.share)await navigator.share({title:"Join my Who Am I? game",text:"Let's play Who Am I? Use room code "+roomCode,url:link});else{await navigator.clipboard.writeText(link);$("status").textContent="Invite link copied. Paste it into WhatsApp."}}catch(e){$("status").textContent="Room code: "+roomCode+" — share it on WhatsApp."}};
-const params=new URLSearchParams(location.search);if(params.get("room"))$("code").value=params.get("room").toUpperCase();
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket=io();const $=id=>document.getElementById(id);
+const catalog={ghost:{name:"Ghost",emoji:"👻"},skull:{name:"Skull",emoji:"💀"},witch:{name:"Witch",emoji:"🧙"},cauldron:{name:"Cauldron",emoji:"🫖"}};
+let roomCode="",mySeat=null,state=null,dragFrom=null;
+function showGame(){ $("home").classList.add("hidden");$("game").classList.remove("hidden"); }
+function error(t){$("homeError").textContent=t||"";$("globalError").textContent=t||"";}
+function sendCreate(){error("");socket.emit("create",{name:$("name").value});}
+function sendJoin(){error("");const code=$("code").value.toUpperCase().replace(/[^A-Z0-9]/g,"");$("code").value=code;socket.emit("join",{name:$("name").value,code});}
+$("create").onclick=sendCreate;$("join").onclick=sendJoin;
+$("code").addEventListener("input",e=>e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""));
+socket.on("connect",()=>{$("connection").textContent="● Connected";});
+socket.on("disconnect",()=>{$("connection").textContent="● Reconnecting…";});
+socket.on("connect_error",()=>{$("connection").textContent="● Offline";});
+socket.on("joined",d=>{roomCode=d.code;mySeat=d.seat;$("roomCode").textContent=roomCode;showGame();error("");});
+socket.on("errorMsg",error);
+socket.on("state",render);
+function render(s){
+ state=s;const me=s.players[mySeat],op=s.players[1-mySeat];if(!me)return;
+ $("round").textContent=s.round;$("phase").textContent=s.status==="playing"?"LIVE":s.status==="finished"?"ROUND WON":"WAITING";
+ $("status").textContent=s.status==="waiting"?"Waiting for your friend to join. Share the code above.":s.status==="finished"?"Round complete. The next round will start automatically.":"Both players are in. Sort faster than your opponent!";
+ $("players").innerHTML=s.players.map((p,i)=>'<div class="player"><strong>'+(i===mySeat?"🙋 ":"⚔️ ")+escapeHtml(p.name||"Waiting for player…")+'</strong><small>'+(p.connected?"● Online":"○ Offline")+' · '+p.score+' total points</small></div>').join("");
+ $("target").innerHTML=s.target.map((id,i)=>slotMarkup(id,i,false,true)).join("");
+ $("mine").innerHTML=me.arrangement.map((id,i)=>slotMarkup(id,i,true,false)).join("");
+ $("opponent").innerHTML=op.arrangement.map((id,i)=>slotMarkup(id,i,false,false)).join("");
+ $("myProgress").textContent=me.progress+"/4";$("opProgress").textContent=op.progress+"/4";
+ $("myFill").style.width=(me.progress*25)+"%";$("opFill").style.width=(op.progress*25)+"%";
+ $("myPoints").textContent=(s.status==="playing"?me.progress*10:me.roundPoints)+" points this round";
+ $("opPoints").textContent=(s.status==="playing"?op.progress*10:op.roundPoints)+" points this round";
+ $("score").textContent=me.score+" : "+op.score;
+ $("scoreNames").textContent=(me.name||"You")+"  vs  "+(op.name||"Opponent");
+ const result=$("result");
+ if(s.status==="finished"){result.classList.remove("hidden");result.innerHTML="<b>🏆 "+escapeHtml(s.winner)+" wins round "+s.round+"!</b><br>"+escapeHtml(me.name)+" earned "+me.roundPoints+" points. "+escapeHtml(op.name)+" earned "+op.roundPoints+" points. Next round is loading…";}
+ else result.classList.add("hidden");
+ const log=$("chatlog");const oldHeight=log.scrollHeight;log.innerHTML=s.chat.map(m=>'<div class="msg '+(m.kind==="system"?"system":"")+'"><small>'+escapeHtml(m.from||"Game")+'</small>'+escapeHtml(m.text)+'</div>').join("");if(log.scrollHeight>=oldHeight)log.scrollTop=log.scrollHeight;
+}
+function slotMarkup(id,i,interactive,target){
+ const item=catalog[id],correct=state&&state.target[i]===id;
+ const controls=interactive&&state&&state.status==="playing"?'<div class="arrows"><button class="secondary" data-from="'+i+'" data-to="'+(i-1)+'" '+(i===0?'disabled':'')+' aria-label="Move up">↑</button><button class="secondary" data-from="'+i+'" data-to="'+(i+1)+'" '+(i===3?'disabled':'')+' aria-label="Move down">↓</button></div>':"";
+ return '<div class="slot '+(correct?"correct":"")+'" '+(interactive?'draggable="'+(state&&state.status==="playing")+'" data-index="'+i+'"':"")+' '+(interactive?'':'')+'><span class="num">'+(i+1)+'</span><span class="obj">'+item.emoji+'</span><span class="objname">'+item.name+(correct&&!target?' <span class="correctmark">✓</span>':"")+'</span>'+controls+'</div>';
+}
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+$("mine").addEventListener("click",e=>{const b=e.target.closest("button[data-from]");if(b&&!b.disabled)socket.emit("move",{from:Number(b.dataset.from),to:Number(b.dataset.to)});});
+$("mine").addEventListener("dragstart",e=>{const slot=e.target.closest(".slot[data-index]");if(!slot)return;dragFrom=Number(slot.dataset.index);e.dataTransfer.effectAllowed="move";});
+$("mine").addEventListener("dragover",e=>{if(e.target.closest(".slot[data-index]"))e.preventDefault();});
+$("mine").addEventListener("drop",e=>{e.preventDefault();const slot=e.target.closest(".slot[data-index]");if(!slot||dragFrom===null)return;const to=Number(slot.dataset.index);if(to!==dragFrom)socket.emit("move",{from:dragFrom,to});dragFrom=null;});
+$("mine").addEventListener("dragend",()=>dragFrom=null);
+function sendChat(){const text=$("message").value.trim();if(!text)return;socket.emit("chat",{text});$("message").value="";}
+$("send").onclick=sendChat;$("message").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat();});
+$("copy").onclick=async()=>{try{await navigator.clipboard.writeText(roomCode);$("copy").textContent="COPIED";setTimeout(()=>$("copy").textContent="COPY",1500);}catch(e){$("copy").textContent=roomCode;}};
+$("share").onclick=()=>{const url=location.origin+"?room="+roomCode;const text="Join my Sorting Battle! Open "+url+" and enter your name. Room code: "+roomCode;location.href="https://wa.me/?text="+encodeURIComponent(text);};
+const invite=new URLSearchParams(location.search).get("room");if(invite){$("code").value=invite.toUpperCase();$("name").focus();}
 </script></body></html>
