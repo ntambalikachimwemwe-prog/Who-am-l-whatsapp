@@ -15,7 +15,7 @@ main{max-width:980px;margin:auto;padding:22px 15px 70px}.brand{display:flex;alig
 <header class="brand"><div class="logo">⚡</div><div><h1>SORTING BATTLE</h1><p>Two players · One challenge · Race to finish</p></div><div class="grow"></div><span id="connection" class="online">Connecting…</span></header>
 <section id="home">
  <div class="card"><span class="tag">CHALLENGE A FRIEND</span><h2 style="margin-top:7px">Ready for a sorting battle?</h2>
-  <div class="field"><label for="name">Your player name</label><input id="name" maxlength="32" placeholder="Enter your name" autocomplete="nickname"></div>
+  <div class="field"><label for="name">Your player name</label><input id="name" maxlength="32" placeholder="Enter your name" autocomplete="nickname"></div>\n  <div class="field"><label for="stake">Virtual stake per round (credits)</label><input id="stake" type="number" min="1" step="1" value="100" inputmode="numeric"><div class="muted">Both players stake this amount each round. Winner receives 90% of the combined pool; 10% goes to the operator wallet.</div></div>\n  <p class="muted">Need credits? <a href="/wallet" style="color:var(--pink)">Open virtual wallet</a>.</p>
   <button id="create" style="width:100%">CREATE A ROOM</button>
   <div style="height:1px;background:var(--line);margin:18px 0"></div>
   <div class="field"><label for="code">Have a shared room code?</label><div class="row"><input id="code" maxlength="8" placeholder="Enter room code" autocapitalize="characters"><button id="join" class="secondary">JOIN</button></div></div>
@@ -45,7 +45,7 @@ const catalog={ghost:{name:"Ghost",emoji:"👻"},skull:{name:"Skull",emoji:"💀
 let roomCode="",mySeat=null,state=null,dragFrom=null;
 function showGame(){ $("home").classList.add("hidden");$("game").classList.remove("hidden"); }
 function error(t){$("homeError").textContent=t||"";$("globalError").textContent=t||"";}
-function sendCreate(){error("");socket.emit("create",{name:$("name").value});}
+function sendCreate(){error("");socket.emit("create",{name:$("name").value,stake:Number($("stake").value)});}
 function sendJoin(){error("");const code=$("code").value.toUpperCase().replace(/[^A-Z0-9]/g,"");$("code").value=code;socket.emit("join",{name:$("name").value,code});}
 $("create").onclick=sendCreate;$("join").onclick=sendJoin;
 $("code").addEventListener("input",e=>e.target.value=e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,""));
@@ -57,8 +57,8 @@ socket.on("errorMsg",error);
 socket.on("state",render);
 function render(s){
  state=s;const me=s.players[mySeat],op=s.players[1-mySeat];if(!me)return;
- $("round").textContent=s.round;$("phase").textContent=s.status==="playing"?"LIVE":s.status==="finished"?"ROUND WON":"WAITING";
- $("status").textContent=s.status==="waiting"?"Waiting for your friend to join. Share the code above.":s.status==="finished"?"Round complete. The next round will start automatically.":"Both players are in. Sort faster than your opponent!";
+ $("round").textContent=s.round+" / 10";$("phase").textContent=s.status==="playing"?"LIVE":s.status==="finished"?"ROUND WON":s.status==="match_finished"?"MATCH OVER":"WAITING";
+ $("status").textContent=s.status==="waiting"?"Waiting for your friend to join. Share the code above.":s.status==="finished"?"Round complete. The next round will start automatically.":s.status==="match_finished"?"10-round match complete. "+(s.matchWinner||"Match ended")+".":"Both players are in. Sort faster than your opponent!";
  $("players").innerHTML=s.players.map((p,i)=>'<div class="player"><strong>'+(i===mySeat?"🙋 ":"⚔️ ")+escapeHtml(p.name||"Waiting for player…")+'</strong><small>'+(p.connected?"● Online":"○ Offline")+' · '+p.score+' total points</small></div>').join("");
  $("target").innerHTML=s.target ? s.target.map((id,i)=>slotMarkup(id,i,false,null,false)).join("") : '<div class="notice">Waiting for your friend\'s target…</div>';
  $("mine").innerHTML=me.arrangement.map((id,i)=>slotMarkup(id,i,true,null,false)).join("");
@@ -93,6 +93,6 @@ $("mine").addEventListener("dragend",()=>dragFrom=null);
 function sendChat(){const text=$("message").value.trim();if(!text)return;socket.emit("chat",{text});$("message").value="";}
 $("send").onclick=sendChat;$("message").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat();});
 $("copy").onclick=async()=>{try{await navigator.clipboard.writeText(roomCode);$("copy").textContent="COPIED";setTimeout(()=>$("copy").textContent="COPY",1500);}catch(e){$("copy").textContent=roomCode;}};
-$("share").onclick=()=>{const url=location.origin+"?room="+roomCode;const text="Join my Sorting Battle! Open "+url+" and enter your name. Room code: "+roomCode;location.href="https://wa.me/?text="+encodeURIComponent(text);};
+$("share").onclick=()=>{const url=location.origin+"?room="+roomCode;const text="Join my Sorting Battle! Open "+url+" and enter your name. Room code: "+roomCode+". Virtual stake: "+(state&&state.stake||"")+" credits per round.";location.href="https://wa.me/?text="+encodeURIComponent(text);};
 const invite=new URLSearchParams(location.search).get("room");if(invite){$("code").value=invite.toUpperCase();$("name").focus();}
 </script></body></html>
