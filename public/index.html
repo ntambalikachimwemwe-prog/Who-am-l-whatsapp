@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#17152b"><meta name="description" content="A live two-player sorting battle. Invite a friend with a room code and race to sort the same objects.">
+<meta name="theme-color" content="#17152b"><meta name="description" content="A live two-player sorting battle. Each player races to solve their own hidden target.">
 <title>Sorting Battle — Play with a friend</title>
 <style>
 :root{color-scheme:dark;--bg:#11101e;--panel:#1c1a30;--panel2:#24213b;--line:#383452;--text:#f8f5ff;--muted:#aaa5c3;--pink:#ff6d9e;--gold:#ffd36e;--mint:#7ee5c1;--blue:#9c9bff}
@@ -21,12 +21,12 @@ main{max-width:980px;margin:auto;padding:22px 15px 70px}.brand{display:flex;alig
   <div class="field"><label for="code">Have a shared room code?</label><div class="row"><input id="code" maxlength="8" placeholder="Enter room code" autocapitalize="characters"><button id="join" class="secondary">JOIN</button></div></div>
   <div id="homeError" class="error" role="alert"></div>
  </div>
- <div class="card"><h2>How to play</h2><div class="how"><div><b>1. Join together</b><span class="muted">Create a room and send its code to your friend on WhatsApp.</span></div><div><b>2. Sort the objects</b><span class="muted">Each player gets a different secret target. Your friend's target appears in your room, and your target appears in your friend's room. Both sort at the same time.</span></div><div><b>3. Win the race</b><span class="muted">Each correct position earns 10 points. First player to complete their friend's target wins the round and earns a 20-point bonus.</span></div></div></div>
+ <div class="card"><h2>How to play</h2><div class="how"><div><b>1. Join together</b><span class="muted">Create a room and send its code to your friend on WhatsApp.</span></div><div><b>2. Sort the objects</b><span class="muted">Each player gets a different secret target. Your target appears only in your friend's room. Sort your own objects to match your hidden target while your friend solves theirs.</span></div><div><b>3. Win the race</b><span class="muted">Each correct position earns 10 points. First player to complete their own hidden target wins the round and earns a 20-point bonus.</span></div></div></div>
 </section>
 <section id="game" class="hidden">
  <div class="card"><div class="row" style="align-items:center"><div style="min-width:0"><div class="muted">SHARE THIS ROOM CODE</div><div id="roomCode" class="code">------</div></div><div class="grow"></div><button id="copy" class="secondary">COPY</button><button id="share" class="secondary">WHATSAPP</button></div><div id="status" class="muted" style="margin-top:8px">Waiting for the second player…</div><div id="players" class="players"></div></div>
  <div class="card"><div class="scoreline"><div><span class="tag">ROUND <span id="round">0</span></span><h2 style="margin:5px 0 0">Your sorting challenge</h2></div><span class="pill" id="phase">WAITING</span></div>
-  <p id="roleHint" class="muted">Your friend's target is shown here. Your own target is hidden from you and shown in your friend's room. Both players sort simultaneously.</p>
+  <p id="roleHint" class="muted">The target shown here belongs to your friend. Your own secret target is shown only in your friend's room. Both players sort simultaneously.</p>
   <div class="board target"><div class="boardhead"><strong>🎯 <span id="targetTitle">YOUR FRIEND'S TARGET</span></strong><span class="pill" id="targetVisibility">Sort this order</span></div><div id="target" class="slots"></div></div>
  </div>
  <div class="card"><div class="boards">
@@ -60,14 +60,14 @@ function render(s){
  $("round").textContent=s.round;$("phase").textContent=s.status==="playing"?"LIVE":s.status==="finished"?"ROUND WON":"WAITING";
  $("status").textContent=s.status==="waiting"?"Waiting for your friend to join. Share the code above.":s.status==="finished"?"Round complete. The next round will start automatically.":"Both players are in. Sort faster than your opponent!";
  $("players").innerHTML=s.players.map((p,i)=>'<div class="player"><strong>'+(i===mySeat?"🙋 ":"⚔️ ")+escapeHtml(p.name||"Waiting for player…")+'</strong><small>'+(p.connected?"● Online":"○ Offline")+' · '+p.score+' total points</small></div>').join("");
- $("target").innerHTML=s.target ? s.target.map((id,i)=>slotMarkup(id,i,false,s.target,false)).join("") : '<div class="notice">Waiting for your friend\'s target…</div>';
- $("mine").innerHTML=me.arrangement.map((id,i)=>slotMarkup(id,i,true,s.target,true)).join("");
+ $("target").innerHTML=s.target ? s.target.map((id,i)=>slotMarkup(id,i,false,null,false)).join("") : '<div class="notice">Waiting for your friend\'s target…</div>';
+ $("mine").innerHTML=me.arrangement.map((id,i)=>slotMarkup(id,i,true,null,false)).join("");
  $("opponent").innerHTML=op.arrangement.map((id,i)=>slotMarkup(id,i,false,null,false)).join("");
- $("targetTitle").textContent="YOUR FRIEND'S TARGET (SORT THIS)";
- $("targetVisibility").textContent="Different from your target";
+ $("targetTitle").textContent="YOUR FRIEND'S TARGET — FOR THEM TO SOLVE";
+ $("targetVisibility").textContent="Your friend solves this";
  $("myBoardTitle").textContent="YOUR ARRANGEMENT";
  $("opBoardTitle").textContent="FRIEND'S LIVE ARRANGEMENT";
- $("roleHint").textContent="You are sorting against your friend's target shown above. Your own different target is visible only in your friend's room. Both players are playing simultaneously.";
+ $("roleHint").textContent="The target shown above belongs to your friend. Do not sort against it. Your own secret target is shown only in your friend's room. Sort your arrangement to match your own hidden target; your progress is checked privately.";
  $("myProgress").textContent=(me.progress===null?"—":me.progress)+"/4";$("opProgress").textContent=(op.progress===null?"—":op.progress)+"/4";
  $("myFill").style.width=(me.progress*25)+"%";$("opFill").style.width=(op.progress*25)+"%";
  $("myPoints").textContent=(s.status==="playing"?me.progress*10:me.roundPoints)+" points this round";
