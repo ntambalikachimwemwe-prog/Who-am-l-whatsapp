@@ -28,15 +28,15 @@ const shuffle = list => {
   return a;
 };
 const playerFor = (room, socketId) => room.players.find(p => p.socketId === socketId);
-const progressFor = p => p.arrangement.reduce((n, id, i) => n + (id === p.roomTarget[i] ? 1 : 0), 0);
+const progressFor = (p, room) => p.arrangement.reduce((n, id, i) => n + (id === room.target[i] ? 1 : 0), 0);
 
 function publicState(room) {
   return {
     code: room.code, status: room.status, round: room.round,
     target: room.target, players: room.players.map((p, seat) => ({
       seat, name: p.name, connected: !!p.socketId, arrangement: p.arrangement,
-      progress: room.status === "waiting" ? 0 : progressFor(p),
-      score: p.score, roundPoints: room.status === "playing" ? progressFor(p) * 10 : p.lastRoundPoints || 0
+      progress: room.status === "waiting" ? 0 : progressFor(p, room),
+      score: p.score, roundPoints: room.status === "playing" ? progressFor(p, room) * 10 : p.lastRoundPoints || 0
     })),
     winner: room.winner, chat: room.chat.slice(-60)
   };
@@ -64,7 +64,7 @@ function finishRound(room, winner) {
   room.status = "finished";
   room.winner = winner.name;
   room.players.forEach(p => {
-    const points = progressFor(p) * 10 + (p === winner ? 20 : 0);
+    const points = progressFor(p, room) * 10 + (p === winner ? 20 : 0);
     p.lastRoundPoints = points;
     p.score += points;
   });
@@ -122,7 +122,7 @@ io.on("connection", socket => {
     if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from > 3 || to < 0 || to > 3 || from === to) return;
     [p.arrangement[from], p.arrangement[to]] = [p.arrangement[to], p.arrangement[from]];
     broadcast(room);
-    if (progressFor(p) === 4) finishRound(room, p);
+    if (progressFor(p, room) === 4) finishRound(room, p);
   });
 
   socket.on("chat", payload => {
