@@ -40,7 +40,8 @@ function publicState(room, viewerSeat) {
     isSorter,
     players: room.players.map((p, seat) => ({
       seat, name: p.name, connected: !!p.socketId, arrangement: p.arrangement,
-      progress: room.status === "waiting" ? 0 : progressFor(p, room),
+      // Do not leak the hidden target through the observer's progress count to the sorter.
+      progress: room.status === "waiting" ? 0 : (isSorter && seat !== viewerSeat ? null : progressFor(p, room)),
       score: p.score, roundPoints: room.status === "playing" ? progressFor(p, room) * 10 : p.lastRoundPoints || 0
     })),
     winner: room.winner, chat: room.chat.slice(-60)
