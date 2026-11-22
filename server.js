@@ -34,7 +34,7 @@ const progressFor = (p, target) => p.arrangement.reduce((n, id, i) => n + (id ==
 
 function publicState(room, viewerSeat) {
   return {
-    code: room.code, status: room.status, round: room.round,
+    code: room.code, status: room.status, round: room.round, totalRounds: 10, stake: room.stake, matchWinner: room.matchWinner || null, lastPayout: room.lastPayout || null, operatorShare: room.operatorShare || 0,
     // Each player sees the other player's target, never their own.
     target: room.status === "waiting" ? null : targetFor(room, viewerSeat),
     players: room.players.map((p, seat) => {
@@ -85,7 +85,7 @@ function finishRound(room, winner) {
     p.lastRoundPoints = points;
     p.score += points;
   });
-  addChat(room, "system", winner.name + " completed the arrangement first and wins this round! Next round starts automatically.");
+  addChat(room, "system", winner.name + " wins round " + room.round + " and receives " + winnerCut + " virtual credits. Operator share: " + operatorCut + ".");
   broadcast(room);
   setTimeout(() => {
     const current = rooms.get(room.code);
@@ -95,11 +95,11 @@ function finishRound(room, winner) {
 
 io.on("connection", socket => {
   socket.on("create", payload => {
-    const name = clean(payload && payload.name) || "Player 1";
+    const name = clean(payload && payload.name) || "Player 1";\n    const stake = Number(payload && payload.stake);\n    if (!Number.isSafeInteger(stake) || stake < 1 || stake > 10000000) return socket.emit("errorMsg", "Enter a valid virtual stake (minimum 1).");\n    const creatorWallet = walletFor(name);\n    if (creatorWallet.balance < stake) return socket.emit("errorMsg", "Your wallet does not have enough virtual credits. Request credits from the wallet page.");
     let code = makeCode();
     while (rooms.has(code)) code = makeCode();
     const room = {
-      code, status: "waiting", round: 0, winner: null, chat: [],
+      code, status: "waiting", round: 0, winner: null, chat: [], stake, operatorShare: 0, matchWinner: null,
       players: [
         { name, socketId: socket.id, arrangement: [], score: 0, lastRoundPoints: 0 },
         { name: "", socketId: null, arrangement: [], score: 0, lastRoundPoints: 0 }
@@ -116,7 +116,7 @@ io.on("connection", socket => {
     const code = clean(payload && payload.code, 8).toUpperCase();
     const name = clean(payload && payload.name) || "Player 2";
     const room = rooms.get(code);
-    if (!room) return socket.emit("errorMsg", "Room not found. Check the code and try again.");
+    if (!room) return socket.emit("errorMsg", "Room not found. Check the code and try again.");\n    const joiningWallet = walletFor(name);\n    if (joiningWallet.balance < room.stake) return socket.emit("errorMsg", "Your wallet does not have enough virtual credits for the " + room.stake + " stake. Request credits first.");
     let seat = room.players.findIndex(p => p.socketId === socket.id);
     if (seat < 0) seat = room.players.findIndex(p => !p.socketId && (!p.name || p.name.toLowerCase() === name.toLowerCase()));
     if (seat < 0) seat = room.players.findIndex(p => !p.socketId && !p.name);
@@ -200,7 +200,7 @@ app.post("/api/wallet/request", (req,res) => {
   res.json({ok:true,request:item,balance:w.balance});
 });
 app.get("/api/admin/summary",adminOnly,(req,res)=>{
-  res.json({wallets:[...wallets.values()],requests,ledger,totals:{players:wallets.size,credits:[...wallets.values()].reduce((a,w)=>a+w.balance,0),operatorShare:ledger.filter(x=>x.type==="operator_share").reduce((a,x)=>a+x.amount,0)}});
+  res.json({wallets:[...wallets.values()],requests,ledger,totals:{players:wallets.size,credits:[...wallets.values()].reduce((a,w)=>a+w.balance,0),operatorShare:ledger.filter(x=>x.type==="operator_share").reduce((a,x)=>a+x.amount,0)},matches:[...rooms.values()].map(r=>({code:r.code,round:r.round,status:r.status,players:r.players.map(p=>p.name),stake:r.stake,matchWinner:r.matchWinner,operatorShare:r.operatorShare}))});
 });
 app.post("/api/admin/request/:id",adminOnly,(req,res)=>{
   const item=requests.find(x=>x.id===req.params.id);
