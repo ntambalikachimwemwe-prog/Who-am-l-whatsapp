@@ -37,17 +37,13 @@ function publicState(room, viewerSeat) {
     // Each player sees the other player's target, never their own.
     target: room.status === "waiting" ? null : targetFor(room, viewerSeat),
     players: room.players.map((p, seat) => {
-      // Only disclose the viewer's own progress. The opponent's progress is
-      // deliberately hidden because it is measured against the viewer's secret target.
-      const isViewer = seat === viewerSeat;
-      const progress = room.status === "waiting" ? 0 :
-        (isViewer ? progressFor(p, targetFor(room, seat)) : null);
+      // Progress is measured against each player's OWN target. The target itself
+      // is never sent to that player; it is shown only in the opponent's room.
+      const progress = room.status === "waiting" ? 0 : progressFor(p, p.target);
       return {
         seat, name: p.name, connected: !!p.socketId, arrangement: p.arrangement,
         progress, score: p.score,
-        roundPoints: isViewer
-          ? (room.status === "playing" ? progress * 10 : p.lastRoundPoints || 0)
-          : null
+        roundPoints: room.status === "playing" ? progress * 10 : p.lastRoundPoints || 0
       };
     }),
     winner: room.winner, chat: room.chat.slice(-60)
