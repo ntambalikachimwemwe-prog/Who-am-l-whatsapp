@@ -28,22 +28,23 @@ const shuffle = list => {
   return a;
 };
 const playerFor = (room, socketId) => room.players.find(p => p.socketId === socketId);
-const progressFor = (p, room) => p.arrangement.reduce((n, id, i) => n + (id === room.target[i] ? 1 : 0), 0);
+const targetFor = (room, seat) => room.players[1 - seat].target;
+const progressFor = (p, target) => p.arrangement.reduce((n, id, i) => n + (id === target[i] ? 1 : 0), 0);
 
 function publicState(room, viewerSeat) {
-  const isSorter = viewerSeat === room.activeSeat;
   return {
     code: room.code, status: room.status, round: room.round,
-    // The target is sent only to the observer/opponent, never to the player sorting.
-    target: isSorter ? null : room.target,
-    activeSeat: room.activeSeat,
-    isSorter,
-    players: room.players.map((p, seat) => ({
-      seat, name: p.name, connected: !!p.socketId, arrangement: p.arrangement,
-      // Do not leak the hidden target through the observer's progress count to the sorter.
-      progress: room.status === "waiting" ? 0 : (isSorter && seat !== viewerSeat ? null : progressFor(p, room)),
-      score: p.score, roundPoints: room.status === "playing" ? progressFor(p, room) * 10 : p.lastRoundPoints || 0
-    })),
+    // Each player sees the other player's target, never their own.
+    target: room.status === "waiting" ? null : targetFor(room, viewerSeat),
+    players: room.players.map((p, seat) => {
+      const target = targetFor(room, seat);
+      const progress = room.status === "waiting" ? 0 : progressFor(p, target);
+      return {
+        seat, name: p.name, connected: !!p.socketId, arrangement: p.arrangement,
+        progress, score: p.score,
+        roundPoints: room.status === "playing" ? progress * 10 : p.lastRoundPoints || 0
+      };
+    }),
     winner: room.winner, chat: room.chat.slice(-60)
   };
 }
@@ -57,19 +58,19 @@ function addChat(room, kind, text, from) {
   if (room.chat.length > 100) room.chat.shift();
 }
 function beginRound(room) {
-  room.target = shuffle(OBJECTS.map(x => x.id));
   room.round += 1;
-  room.activeSeat = (room.round - 1) % 2;
-  room.players.forEach(p => {
+  const firstTarget = shuffle(OBJECTS.map(x => x.id));
+  let secondTarget = shuffle(OBJECTS.map(x => x.id));
+  while (secondTarget.every((id, i) => id === firstTarget[i])) secondTarget = shuffle(OBJECTS.map(x => x.id));
+  room.players.forEach((p, seat) => {
+    p.target = seat === 0 ? firstTarget : secondTarget;
     p.arrangement = shuffle(OBJECTS.map(x => x.id));
-    while (p.arrangement.every((id, i) => id === room.target[i])) p.arrangement = shuffle(OBJECTS.map(x => x.id));
+    while (p.arrangement.every((id, i) => id === targetFor(room, seat)[i])) p.arrangement = shuffle(OBJECTS.map(x => x.id));
     p.lastRoundPoints = 0;
   });
   room.winner = null;
   room.status = "playing";
-  const sorter = room.players[room.activeSeat];
-  const observer = room.players[1 - room.activeSeat];
-  addChat(room, "system", "Round " + room.round + ": " + sorter.name + " is sorting. " + observer.name + " can see the target and guide them in chat.");
+  addChat(room, "system", "Round " + room.round + " is live! Each player sees their friend's target and sorts against it. Your own target is shown only in your friend's room.");
   broadcast(room);
 }
 function finishRound(room, winner) {
@@ -77,7 +78,7 @@ function finishRound(room, winner) {
   room.status = "finished";
   room.winner = winner.name;
   room.players.forEach((p, seat) => {
-    const points = seat === room.activeSeat ? progressFor(p, room) * 10 + (p === winner ? 20 : 0) : 0;
+    const points = progressFor(p, targetFor(room, seat)) * 10 + (p === winner ? 20 : 0);
     p.lastRoundPoints = points;
     p.score += points;
   });
@@ -95,7 +96,7 @@ io.on("connection", socket => {
     let code = makeCode();
     while (rooms.has(code)) code = makeCode();
     const room = {
-      code, status: "waiting", round: 0, target: [], activeSeat: 0, winner: null, chat: [],
+      code, status: "waiting", round: 0, winner: null, chat: [],
       players: [
         { name, socketId: socket.id, arrangement: [], score: 0, lastRoundPoints: 0 },
         { name: "", socketId: null, arrangement: [], score: 0, lastRoundPoints: 0 }
@@ -130,12 +131,12 @@ io.on("connection", socket => {
   socket.on("move", payload => {
     const room = rooms.get(socket.data.code);
     const p = room && playerFor(room, socket.id);
-    if (!room || !p || room.status !== "playing" || room.players[room.activeSeat] !== p) return;
+    if (!room || !p || room.status !== "playing") return;
     const from = Number(payload && payload.from), to = Number(payload && payload.to);
     if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from > 3 || to < 0 || to > 3 || from === to) return;
     [p.arrangement[from], p.arrangement[to]] = [p.arrangement[to], p.arrangement[from]];
     broadcast(room);
-    if (progressFor(p, room) === 4) finishRound(room, p);
+    if (progressFor(p, targetFor(room, socket.data.seat)) === 4) finishRound(room, p);
   });
 
   socket.on("chat", payload => {
