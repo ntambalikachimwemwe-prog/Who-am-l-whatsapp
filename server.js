@@ -84,7 +84,7 @@ function finishRound(room, winner) {
   room.status = "finished";
   room.winner = winner.name;
   room.players.forEach((p, seat) => {
-    const points = progressFor(p, targetFor(room, seat)) * 10 + (p === winner ? 20 : 0);
+    const points = progressFor(p, p.target) * 10 + (p === winner ? 20 : 0);
     p.lastRoundPoints = points;
     p.score += points;
   });
@@ -142,7 +142,7 @@ io.on("connection", socket => {
     if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || from > 3 || to < 0 || to > 3 || from === to) return;
     [p.arrangement[from], p.arrangement[to]] = [p.arrangement[to], p.arrangement[from]];
     broadcast(room);
-    if (progressFor(p, targetFor(room, socket.data.seat)) === 4) finishRound(room, p);
+    if (progressFor(p, p.target) === 4) finishRound(room, p);
   });
 
   socket.on("chat", payload => {
