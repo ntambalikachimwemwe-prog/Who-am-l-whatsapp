@@ -68,7 +68,7 @@ function render(s){
  $("myBoardTitle").textContent=s.isSorter?"YOUR ARRANGEMENT":"YOUR ROOM (OBSERVER)";
  $("opBoardTitle").textContent=s.isSorter?"OPPONENT VIEW":"SORTER LIVE";
  $("roleHint").textContent=s.isSorter?"You are sorting this round. The target is hidden from you; your opponent can see it and guide you in chat.":"You are the target viewer this round. Keep the target order secret from the sorter and guide them using room chat.";
- $("myProgress").textContent=me.progress+"/4";$("opProgress").textContent=op.progress+"/4";
+ $("myProgress").textContent=(me.progress===null?"—":me.progress)+"/4";$("opProgress").textContent=(op.progress===null?"—":op.progress)+"/4";
  $("myFill").style.width=(me.progress*25)+"%";$("opFill").style.width=(op.progress*25)+"%";
  $("myPoints").textContent=(s.status==="playing"?me.progress*10:me.roundPoints)+" points this round";
  $("opPoints").textContent=(s.status==="playing"?op.progress*10:op.roundPoints)+" points this round";
