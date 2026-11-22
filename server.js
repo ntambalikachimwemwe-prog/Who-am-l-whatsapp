@@ -62,8 +62,9 @@ function beginRound(room) {
   const firstTarget = shuffle(OBJECTS.map(x => x.id));
   let secondTarget = shuffle(OBJECTS.map(x => x.id));
   while (secondTarget.every((id, i) => id === firstTarget[i])) secondTarget = shuffle(OBJECTS.map(x => x.id));
+  room.players[0].target = firstTarget;
+  room.players[1].target = secondTarget;
   room.players.forEach((p, seat) => {
-    p.target = seat === 0 ? firstTarget : secondTarget;
     p.arrangement = shuffle(OBJECTS.map(x => x.id));
     while (p.arrangement.every((id, i) => id === targetFor(room, seat)[i])) p.arrangement = shuffle(OBJECTS.map(x => x.id));
     p.lastRoundPoints = 0;
