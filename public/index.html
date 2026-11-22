@@ -77,7 +77,7 @@ function render(s){
  $("score").textContent=me.score+" : "+op.score;
  $("scoreNames").textContent=(me.name||"You")+"  vs  "+(op.name||"Opponent");
  const result=$("result");
- if(s.status==="finished"){result.classList.remove("hidden");result.innerHTML="<b>🏆 "+escapeHtml(s.winner)+" wins round "+s.round+"!</b><br>"+escapeHtml(me.name)+" earned "+me.roundPoints+" points. "+escapeHtml(op.name)+" earned "+op.roundPoints+" points. Next round is loading…";}
+ if(s.status==="finished" || s.status==="match_finished"){result.classList.remove("hidden");result.innerHTML=s.status==="match_finished"?"<b>🏆 10-round match complete: "+escapeHtml(s.matchWinner||"Match ended")+"</b><br>Final score: "+me.score+" : "+op.score+". Operator virtual share earned in this room: "+(s.operatorShare||0)+".":"<b>🏆 "+escapeHtml(s.winner)+" wins round "+s.round+"!</b><br>"+escapeHtml(me.name)+" earned "+me.roundPoints+" points. "+escapeHtml(op.name)+" earned "+op.roundPoints+" points.<br>Virtual payout: winner "+(s.lastPayout?s.lastPayout.winnerAmount:0)+" credits; operator "+(s.lastPayout?s.lastPayout.operatorAmount:0)+" credits. Next round is loading…";}
  else result.classList.add("hidden");
  const log=$("chatlog");const oldHeight=log.scrollHeight;log.innerHTML=s.chat.map(m=>'<div class="msg '+(m.kind==="system"?"system":"")+'"><small>'+escapeHtml(m.from||"Game")+'</small>'+escapeHtml(m.text)+'</div>').join("");if(log.scrollHeight>=oldHeight)log.scrollTop=log.scrollHeight;
 }
