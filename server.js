@@ -7,6 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 const PORT = process.env.PORT || 10000;
+app.use(express.json());
 app.use(express.static("public"));
 app.get("/health", (_, res) => res.json({ ok: true, service: "Sorting Battle" }));
 
@@ -165,5 +166,58 @@ io.on("connection", socket => {
     }, 60 * 60 * 1000);
   });
 });
+
+
+/* Virtual-credit wallet and private admin dashboard.
+   This in-memory ledger is intentionally for private play/testing only. */
+const wallets = new Map();
+const requests = [];
+const ledger = [];
+const adminPassword = process.env.ADMIN_PASSWORD || "";
+const walletFor = name => {
+  const key = clean(name, 32).toLowerCase();
+  if (!key) return null;
+  if (!wallets.has(key)) wallets.set(key, { name: clean(name,32), balance: 0 });
+  return wallets.get(key);
+};
+const adminOnly = (req,res,next) => {
+  if (!adminPassword || req.headers["x-admin-password"] !== adminPassword) return res.status(401).json({error:"Admin authentication required"});
+  next();
+};
+app.get("/api/wallet", (req,res) => {
+  const w = walletFor(req.query.name);
+  if (!w) return res.status(400).json({error:"Enter a player name"});
+  res.json({name:w.name,balance:w.balance,requests:requests.filter(x=>x.playerKey===w.name.toLowerCase())});
+});
+app.post("/api/wallet/request", (req,res) => {
+  const name=clean(req.body && req.body.name,32), amount=Number(req.body && req.body.amount), type=req.body && req.body.type;
+  if (!name || !Number.isSafeInteger(amount) || amount<1 || amount>100000000 || !["deposit","withdrawal"].includes(type)) return res.status(400).json({error:"Enter a valid player, amount and request type"});
+  const w=walletFor(name);
+  const pending= requests.filter(x=>x.playerKey===name.toLowerCase()&&x.type==="withdrawal"&&x.status==="pending").reduce((a,x)=>a+x.amount,0);
+  if(type==="withdrawal" && amount>w.balance-pending) return res.status(400).json({error:"Insufficient available virtual credits"});
+  const item={id:crypto.randomUUID(),player:w.name,playerKey:name.toLowerCase(),type,amount,status:"pending",createdAt:new Date().toISOString()};
+  requests.unshift(item);
+  res.json({ok:true,request:item,balance:w.balance});
+});
+app.get("/api/admin/summary",adminOnly,(req,res)=>{
+  res.json({wallets:[...wallets.values()],requests,ledger,totals:{players:wallets.size,credits:[...wallets.values()].reduce((a,w)=>a+w.balance,0),operatorShare:ledger.filter(x=>x.type==="operator_share").reduce((a,x)=>a+x.amount,0)}});
+});
+app.post("/api/admin/request/:id",adminOnly,(req,res)=>{
+  const item=requests.find(x=>x.id===req.params.id);
+  if(!item||item.status!=="pending") return res.status(404).json({error:"Pending request not found"});
+  const action=req.body && req.body.action;
+  if(!["approve","reject"].includes(action)) return res.status(400).json({error:"Invalid action"});
+  const w=walletFor(item.player);
+  if(action==="approve"){
+    if(item.type==="deposit") w.balance+=item.amount;
+    else { if(w.balance<item.amount) return res.status(409).json({error:"Balance changed; withdrawal cannot be processed"}); w.balance-=item.amount; }
+    ledger.unshift({id:crypto.randomUUID(),player:w.name,type:item.type,amount:item.amount,createdAt:new Date().toISOString(),requestId:item.id});
+  }
+  item.status=action==="approve"?"approved":"rejected";
+  item.reviewedAt=new Date().toISOString();
+  res.json({ok:true,request:item,balance:w.balance});
+});
+app.get("/admin", (req,res)=>res.sendFile(require("path").join(__dirname,"public","admin.html")));
+app.get("/wallet", (req,res)=>res.sendFile(require("path").join(__dirname,"public","wallet.html")));
 
 server.listen(PORT, "0.0.0.0", () => console.log("Sorting Battle listening on " + PORT));
