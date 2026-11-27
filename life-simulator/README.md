@@ -1,27 +1,37 @@
-# Life Journey — 3D life simulation
+# Life Journey — expanding 3D life simulation
 
-A Godot 4 third-person life-simulation game foundation, maintained on the `life-simulator-game` branch.
+Life Journey is a third-person 3D life-simulation project built with Godot 4. It follows a character through four different environments.
+
+## Environments now included
+- **Primary school:** school grounds, classroom desks, teacher, classmates, headteacher and a family home.
+- **Secondary school:** boys' and girls' hostel blocks, dorm beds, a common room, roommates and friends.
+- **University:** lecture block, lecture desks, student centre, library, lecturer, study partner, campus friends and a potential romantic interest.
+- **Adult life:** neighbourhood road, home, office, shop, bus stop, neighbour, colleague, shopkeeper and partner.
+
+The N key / NEXT button changes life stage and rebuilds the environment around the player. People can be approached and spoken to. The player types the character's words and receives simple rule-based replies.
+
+## Controls
+**Keyboard and mouse**
+- WASD / arrow keys: move
+- Mouse: look around
+- Shift: run
+- Space: jump
+- E: talk to a nearby person
+- N: change life stage
+- Esc: release mouse capture
+
+**Touchscreen**
+- Direction buttons: move
+- RUN: run while held
+- JUMP: jump
+- TALK: speak to a nearby person
+- NEXT: change life stage
+- Drag the game view to rotate the camera
 
 ## Run locally
 1. Install Godot 4.3 or newer.
 2. Import `life-simulator/project.godot` in Godot.
 3. Press F6/F5 to run the main scene.
 
-## Current playable systems
-- Third-person character movement, camera look, running and jumping.
-- Procedurally built schoolyard, school building, classroom desks and trees.
-- Teacher, headteacher, classmate and friend characters with proximity interaction.
-- Typed player dialogue and simple context-aware NPC replies.
-- A life-stage selector cycling Primary School, Secondary School, University and Adult Life (press N).
-
-## Controls
-- WASD / arrow keys: move
-- Mouse: look around
-- Shift: run
-- Space: jump
-- E: talk to a nearby character
-- N: advance the life-stage label
-- Esc: release mouse
-
-## Production status
-This is an expanding playable foundation, not yet the finished photorealistic game or a verified release build. The current characters and environment are procedural placeholders. The stage selector currently changes the displayed stage label; full separate school, hostel, university, relationship and adult-life worlds still need to be built. Photorealistic character/environment assets, facial animation, richer NPC AI, missions, save/load, touch controls, device testing and signed Windows/Android exports remain outstanding. No downloadable release is claimed until those builds are generated and tested.
+## Current limitations
+This is a growing playable game foundation, not a finished photorealistic commercial game. People are still capsule-based 3D placeholders; environments use procedural geometric models and simple materials. Conversations are rule-based, characters do not yet walk around autonomously, and the game does not yet include missions, a full relationship system, save/load, voice, vehicles, or finished sound and music. Windows and Android release packages have not yet been generated and tested. A successful automated Godot validation is required before claiming a verified build.
