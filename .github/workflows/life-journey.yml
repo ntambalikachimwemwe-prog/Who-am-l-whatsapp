@@ -1,0 +1,28 @@
+name: Life Journey Godot validation
+
+on:
+  push:
+    branches: [life-simulator-game]
+    paths:
+      - "life-simulator/**"
+      - ".github/workflows/life-journey.yml"
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Godot 4
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.3.0
+          use-dotnet: false
+
+      - name: Import project and validate scripts
+        run: godot --headless --editor --path life-simulator --quit
+
+      - name: Run scene smoke test
+        run: godot --headless --path life-simulator --quit-after 5
