@@ -74,8 +74,6 @@ jobs:
 
       - name: Export Android APK
         env:
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
-          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
           GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/lifejourney-debug.keystore
           GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
           GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
