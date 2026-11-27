@@ -99,33 +99,59 @@ func _build_player() -> void:
 	player.position = Vector3(0, 0.2, 6)
 	add_child(player)
 
+func _person_part(parent: Node3D, part_name: String, radius: float, height: float, color: Color, local_pos: Vector3) -> void:
+	var part := MeshInstance3D.new()
+	part.name = part_name
+	var mesh := CapsuleMesh.new()
+	mesh.radius = radius
+	mesh.height = height
+	part.mesh = mesh
+	part.material_override = _material(color)
+	part.position = local_pos
+	parent.add_child(part)
+
 func _spawn_npc(npc_name: String, pos: Vector3, color: Color, role: String) -> void:
 	var npc := StaticBody3D.new()
 	npc.name = npc_name
 	npc.position = pos
-	var body := MeshInstance3D.new()
-	var capsule := CapsuleMesh.new()
-	capsule.radius = 0.34
-	capsule.height = 1.7
-	body.mesh = capsule
-	body.position.y = 0.85
-	body.material_override = _material(color)
-	npc.add_child(body)
+	# Separate head, torso, arms and legs make people easier to recognise at game distance.
+	_person_part(npc, "Shirt", 0.31, 0.82, color, Vector3(0, 1.12, 0))
+	_person_part(npc, "Neck", 0.10, 0.20, Color(0.48, 0.29, 0.19), Vector3(0, 1.62, 0))
 	var head := MeshInstance3D.new()
+	head.name = "Head"
 	var head_mesh := SphereMesh.new()
-	head_mesh.radius = 0.25
-	head_mesh.height = 0.5
+	head_mesh.radius = 0.235
+	head_mesh.height = 0.47
 	head.mesh = head_mesh
-	head.position.y = 1.82
+	head.position.y = 1.88
 	head.material_override = _material(Color(0.48, 0.29, 0.19))
 	npc.add_child(head)
+	var hair := MeshInstance3D.new()
+	var hair_mesh := SphereMesh.new()
+	hair_mesh.radius = 0.24
+	hair_mesh.height = 0.22
+	hair.mesh = hair_mesh
+	hair.position = Vector3(0, 2.04, -0.025)
+	hair.material_override = _material(Color(0.055, 0.04, 0.03))
+	npc.add_child(hair)
+	for side in [-1.0, 1.0]:
+		_person_part(npc, "Arm", 0.115, 0.72, color, Vector3(side * 0.39, 1.08, 0))
+		_person_part(npc, "Hand", 0.08, 0.18, Color(0.48, 0.29, 0.19), Vector3(side * 0.39, 0.62, 0))
+		_person_part(npc, "Trousers", 0.145, 0.78, Color(0.12, 0.13, 0.17), Vector3(side * 0.17, 0.36, 0))
+		_person_part(npc, "Shoe", 0.13, 0.22, Color(0.045, 0.04, 0.035), Vector3(side * 0.17, 0.04, -0.04))
 	var collision := CollisionShape3D.new()
 	var shape := CapsuleShape3D.new()
 	shape.radius = 0.34
-	shape.height = 1.7
+	shape.height = 1.85
 	collision.shape = shape
-	collision.position.y = 0.85
+	collision.position.y = 0.94
 	npc.add_child(collision)
+	var name_tag := Label3D.new()
+	name_tag.text = npc_name
+	name_tag.position.y = 2.35
+	name_tag.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	name_tag.font_size = 32
+	npc.add_child(name_tag)
 	stage_container.add_child(npc)
 	npc.set_meta("npc_name", npc_name)
 	npc.set_meta("role", role)
