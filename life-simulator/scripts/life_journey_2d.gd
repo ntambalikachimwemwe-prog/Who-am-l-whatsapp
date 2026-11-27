@@ -31,6 +31,7 @@ var player_position := Vector2(280, 500)
 var player_speed := 270.0
 var player_facing := 1.0
 var player_texture: Texture2D
+var touch_direction := Vector2.ZERO
 var current_npc: Dictionary = {}
 var npc_nodes: Array[Dictionary] = []
 var world_layer: Node2D
@@ -73,11 +74,10 @@ func _build_world() -> void:
 func _build_player() -> void:
 	player_sprite = Sprite2D.new()
 	player_sprite.name = "MainCharacter"
-	player_sprite.texture = player_texture
+	player_sprite.texture = player_texture if player_texture else _make_portrait_placeholder(Color("#8f5a3e"), Color("#171923"))
 	player_sprite.position = player_position
 	player_sprite.centered = true
-	if player_texture:
-		player_sprite.scale = _fit_texture(player_texture, Vector2(100, 190))
+	player_sprite.scale = _fit_texture(player_sprite.texture, Vector2(110, 190))
 	world_layer.add_child(player_sprite)
 	camera.position = player_position
 
@@ -122,6 +122,11 @@ func _build_hud() -> void:
 	activity_label.text = "Move: WASD / arrows • Talk: E or tap a person • Stage: NEXT"
 	root.add_child(activity_label)
 
+	_add_move_button(root, "▲", Vector2(1120, 490), Vector2(64, 54), Vector2(0, -1))
+	_add_move_button(root, "▼", Vector2(1120, 600), Vector2(64, 54), Vector2(0, 1))
+	_add_move_button(root, "◀", Vector2(1050, 545), Vector2(64, 54), Vector2(-1, 0))
+	_add_move_button(root, "▶", Vector2(1190, 545), Vector2(64, 54), Vector2(1, 0))
+
 	var talk_button := Button.new()
 	talk_button.text = "TALK"
 	talk_button.position = Vector2(1090, 610)
@@ -155,6 +160,16 @@ func _build_hud() -> void:
 	close.pressed.connect(func(): dialogue_panel.hide())
 	actions.add_child(close)
 	_fit_hud()
+
+
+func _add_move_button(parent: Control, caption: String, pos: Vector2, button_size: Vector2, direction: Vector2) -> void:
+	var button := Button.new()
+	button.text = caption
+	button.position = pos
+	button.custom_minimum_size = button_size
+	button.button_down.connect(func(): touch_direction = direction)
+	button.button_up.connect(func(): touch_direction = Vector2.ZERO)
+	parent.add_child(button)
 
 func _fit_hud() -> void:
 	if dialogue_panel:
@@ -282,6 +297,7 @@ func _process(delta: float) -> void:
 	if Input.is_key_pressed(KEY_LEFT): direction.x -= 1
 	if Input.is_key_pressed(KEY_UP): direction.y -= 1
 	if Input.is_key_pressed(KEY_DOWN): direction.y += 1
+	direction += touch_direction
 	direction = direction.normalized()
 	player_position += direction * player_speed * delta
 	player_position.x = clamp(player_position.x, 80.0, 1420.0)
