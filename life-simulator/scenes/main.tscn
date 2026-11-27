@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/world.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/life_journey_2d.gd" id="1"]
 
-[node name="LifeJourney" type="Node3D"]
+[node name="LifeJourney2D" type="Node2D"]
 script = ExtResource("1")
