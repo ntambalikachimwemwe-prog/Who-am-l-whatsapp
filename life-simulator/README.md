@@ -1,32 +1,27 @@
-# Life Journey — 3D Life Simulation
+# Life Journey — 3D life simulation
 
-This is the Godot 4 project foundation for a third-person life simulation intended for Windows and Android.
+A Godot 4 third-person life-simulation game foundation, maintained on the `life-simulator-game` branch.
 
-## Open and run
+## Run locally
 1. Install Godot 4.3 or newer.
-2. Import the `life-simulator/project.godot` file.
+2. Import `life-simulator/project.godot` in Godot.
 3. Press F6/F5 to run the main scene.
 
-## Current implemented foundation
-- Third-person character controller with keyboard movement, mouse camera, running and jumping.
-- A 3D schoolyard environment with a school building, classroom furniture and NPC placeholders.
-- Teacher/classmate/friend interaction prompts.
-- A typed dialogue panel where the player writes the character's words.
-- Godot project settings using the mobile-compatible Compatibility renderer.
+## Current playable systems
+- Third-person character movement, camera look, running and jumping.
+- Procedurally built schoolyard, school building, classroom desks and trees.
+- Teacher, headteacher, classmate and friend characters with proximity interaction.
+- Typed player dialogue and simple context-aware NPC replies.
+- A life-stage selector cycling Primary School, Secondary School, University and Adult Life (press N).
 
 ## Controls
-- WASD: move
+- WASD / arrow keys: move
 - Mouse: look around
 - Shift: run
 - Space: jump
 - E: talk to a nearby character
+- N: advance the life-stage label
 - Esc: release mouse
 
-## Important production status
-This is the first playable engineering foundation, not a finished photorealistic commercial game. The current characters and environment use procedural placeholder geometry. A genuinely realistic release still requires original or licensed high-quality 3D character models, facial rigs and animations, voice/audio, detailed school/home/hostel/university/city environments, NPC behaviour, story/relationship systems, save data, Android touch controls, optimization, device testing, and Windows/Android export signing. Those assets and release builds are not present yet and must not be represented as complete.
-
-The architecture is intended to grow into these life stages:
-1. Nursery and primary school
-2. Secondary school and hostel life
-3. University and relationships
-4. Adult life, work, family and open-world exploration
+## Production status
+This is an expanding playable foundation, not yet the finished photorealistic game or a verified release build. The current characters and environment are procedural placeholders. The stage selector currently changes the displayed stage label; full separate school, hostel, university, relationship and adult-life worlds still need to be built. Photorealistic character/environment assets, facial animation, richer NPC AI, missions, save/load, touch controls, device testing and signed Windows/Android exports remain outstanding. No downloadable release is claimed until those builds are generated and tested.
