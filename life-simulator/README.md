@@ -1,37 +1,26 @@
-# Life Journey — expanding 3D life simulation
+# Life Journey — 2D life simulation
 
-Life Journey is a third-person 3D life-simulation project built with Godot 4. It follows a character through four different environments.
+Life Journey is being rebuilt as a **2D, photo-based life simulation** (not a 3D game). The player moves through illustrated locations and speaks to characters by typing dialogue.
 
-## Environments now included
-- **Primary school:** school grounds, classroom desks, teacher, classmates, headteacher and a family home.
-- **Secondary school:** boys' and girls' hostel blocks, dorm beds, a common room, roommates and friends.
-- **University:** lecture block, lecture desks, student centre, library, lecturer, study partner, campus friends and a potential romantic interest.
-- **Adult life:** neighbourhood road, home, office, shop, bus stop, neighbour, colleague, shopkeeper and partner.
-
-The N key / NEXT button changes life stage and rebuilds the environment around the player. People can be approached and spoken to. The player types the character's words and receives simple rule-based replies.
+## Life stages
+- Primary school: classroom, teacher, classmates, school grounds and home.
+- Secondary school: hostel, dormitory and common room conversations.
+- University: lecture theatre, campus, student centre, friendships and respectful relationship conversations.
+- Adult life: workplace, neighbourhood and home.
 
 ## Controls
-**Keyboard and mouse**
-- WASD / arrow keys: move
-- Mouse: look around
-- Shift: run
-- Space: jump
-- E: talk to a nearby person
-- N: change life stage
-- Esc: release mouse capture
+- WASD or arrow keys: move
+- E or TALK: speak to a nearby character
+- NEXT LIFE STAGE: move to the next life stage
 
-**Touchscreen**
-- Direction buttons: move
-- RUN: run while held
-- JUMP: jump
-- TALK: speak to a nearby person
-- NEXT: change life stage
-- Drag the game view to rotate the camera
+## Character photographs
+The game supports approved character portrait files at:
+- `life-simulator/assets/characters/player.png`
+- `life-simulator/assets/characters/friend.png`
+- `life-simulator/assets/characters/girlfriend.png`
+- Other NPC portrait paths are listed in `scripts/life_journey_2d.gd`.
 
-## Run locally
-1. Install Godot 4.3 or newer.
-2. Import `life-simulator/project.godot` in Godot.
-3. Press F6/F5 to run the main scene.
+Until portrait files are added, the game draws simple 2D placeholder people. Only use a friend's recognizable photo after that person has agreed to its use. Do not use screenshots containing private chat/status UI as character portraits; use the original photo instead.
 
-## Current limitations
-This is a growing playable game foundation, not a finished photorealistic commercial game. People are still capsule-based 3D placeholders; environments use procedural geometric models and simple materials. Conversations are rule-based, characters do not yet walk around autonomously, and the game does not yet include missions, a full relationship system, save/load, voice, vehicles, or finished sound and music. Windows and Android release packages have not yet been generated and tested. A successful automated Godot validation is required before claiming a verified build.
+## Current release status
+This is a 2D playable foundation, not yet a finished release. The 2D movement, stage scenes, proximity interaction, dialogue input and stage switching are implemented in the project source. The personal photographs still need to be cropped/prepared and added as game assets, then the project must pass a Godot export and be tested on an Android phone and/or browser before it can be called a finished product. No tested APK or deployed web build is claimed.
