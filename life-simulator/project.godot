@@ -2,7 +2,7 @@
 config_version=5
 
 [application]
-config/name="Life Journey"
+config/name="Life Journey 2D"
 run/main_scene="res://scenes/main.tscn"
 
 [display]
