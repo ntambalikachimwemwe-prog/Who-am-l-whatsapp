@@ -1,4 +1,4 @@
-name: Godot project validation
+name: Godot validation and exports
 
 on:
   push:
@@ -14,17 +14,29 @@ on:
   workflow_dispatch:
 
 jobs:
-  validate:
+  validate-and-export:
     runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-      - name: Install Godot
-        uses: chickensoft/setup-godot@v2
-        with:
-          version: 4.4.1
-          use-dotnet: false
       - name: Import project and parse scripts
         run: godot --headless --editor --path life-simulator --quit
-      - name: Launch main scene headlessly
+      - name: Run main scene headlessly
         run: timeout 20s godot --headless --path life-simulator --quit-after 3
+      - name: Export Web build
+        run: |
+          mkdir -p build/web
+          godot --headless --path life-simulator --export-release "Web" build/web/index.html
+      - name: Export Windows build
+        run: |
+          mkdir -p build/windows
+          godot --headless --path life-simulator --export-release "Windows Desktop" build/windows/LifeJourney.exe
+      - name: Upload game builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: life-journey-web-and-windows
+          path: |
+            build/web/
+            build/windows/
