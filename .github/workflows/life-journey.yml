@@ -24,6 +24,28 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses >/dev/null
+          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - name: Create temporary Android debug signing key
+        run: |
+          keytool -genkeypair -v \
+            -keystore "$RUNNER_TEMP/lifejourney-debug.keystore" \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Life Journey,C=MW"
+
       - name: Set up Godot 4.4.1
         uses: chickensoft-games/setup-godot@v2
         with:
@@ -50,6 +72,20 @@ jobs:
       - name: Run scene smoke test
         run: godot --headless --path life-simulator --quit-after 5
 
+      - name: Export Android APK
+        env:
+          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
+          GODOT_ANDROID_KEYSTORE_DEBUG_PATH: ${{ runner.temp }}/lifejourney-debug.keystore
+          GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+          GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+        run: |
+          mkdir -p build/android
+          godot --headless --path life-simulator --export-debug "Android" build/android/LifeJourney.apk
+          test -s build/android/LifeJourney.apk
+          unzip -t build/android/LifeJourney.apk
+          "$ANDROID_HOME/build-tools/34.0.0/aapt" dump badging build/android/LifeJourney.apk | grep "package: name='com.globalworks.lifejourney'"
+
       - name: Export Web build
         run: |
           mkdir -p build/web
@@ -59,6 +95,14 @@ jobs:
         run: |
           mkdir -p build/windows
           godot --headless --path life-simulator --export-release "Windows Desktop" build/windows/LifeJourney.exe
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: life-journey-android-apk
+          path: build/android/LifeJourney.apk
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload playable builds
         uses: actions/upload-artifact@v4
